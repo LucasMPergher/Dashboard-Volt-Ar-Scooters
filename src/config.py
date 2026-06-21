@@ -29,6 +29,21 @@ CATEGORIAS_NIVEL_FALLOS: Final[tuple[str, ...]] = ("Bajo", "Medio", "Alto")
 
 MUESTRA_MINIMA: Final[int] = 30
 MUESTRA_MAXIMA: Final[int] = 60
+MUESTRA_PREDETERMINADA: Final[int] = 48
+SEMILLA_PREDETERMINADA: Final[int] = 42
+
+ANTIGUEDAD_MINIMA_MESES: Final[int] = 1
+ANTIGUEDAD_MAXIMA_MESES: Final[int] = 48
+AUTONOMIA_MINIMA_KM: Final[float] = 15.0
+AUTONOMIA_MAXIMA_KM: Final[float] = 45.0
+
+PROBABILIDADES_NIVEL_FALLOS: Final[dict[str, tuple[float, float, float]]] = {
+    "Rosario": (0.20, 0.35, 0.45),
+    "Córdoba": (0.55, 0.35, 0.10),
+}
+
+CORRELACION_MINIMA_ESPERADA: Final[float] = -0.95
+CORRELACION_MAXIMA_ESPERADA: Final[float] = -0.55
 
 TIPOS_VARIABLES: Final[dict[str, str]] = {
     VARIABLE_SUCURSAL: "cualitativa",
