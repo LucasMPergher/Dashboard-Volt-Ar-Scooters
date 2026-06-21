@@ -3,6 +3,7 @@
 import streamlit as st
 
 from src.config import NOMBRE_PROYECTO
+from src.interfaz_carga import mostrar_carga_datos
 
 
 st.set_page_config(
@@ -35,3 +36,5 @@ st.info(
     "Los módulos estadísticos completos se implementarán en fases posteriores. "
     "Esta versión solo prepara la estructura inicial del proyecto."
 )
+
+mostrar_carga_datos()

@@ -36,3 +36,31 @@
   se consideró excesiva, por lo que no se ajustó la dispersión.
 - Semana: se representa mediante el nombre del archivo, por ejemplo
   `volt_ar_semana_01.xlsx`, y no como una quinta variable estadística.
+
+## Fase P-03: carga y validación semanal
+
+- Formatos admitidos: `.xlsx` y `.csv`.
+- Excel: se exige la hoja `datos`. Si la hoja no existe, se informa el listado de
+  hojas encontradas y no se selecciona otra hoja automáticamente.
+- CSV: se lee como UTF-8 y se permite detección de separador coma o punto y coma
+  cuando Pandas puede interpretarlo.
+- Estructura: se exigen exactamente las cuatro variables estadísticas. Si están
+  en otro orden pero el conjunto es correcto, se reordenan al orden canónico.
+- Columnas rechazadas: faltantes, adicionales y columnas `Unnamed`.
+- Cantidad de filas: se mantiene el rango metodológico de 30 a 60 observaciones.
+- Categorías cualitativas: se eliminan espacios y se normalizan diferencias de
+  mayúsculas y minúsculas sin corregir nombres desconocidos.
+- Variables numéricas: la antigüedad debe convertirse a entero sin decimales no
+  enteros; la autonomía debe convertirse a número real. No se aceptan infinitos.
+- Valores nulos: no se permiten en ninguna columna.
+- Duplicados: no se eliminan, porque sin identificador dos monopatines pueden
+  compartir los mismos valores observados.
+- Archivo predeterminado: `data/volt_ar_semana_01.xlsx` se carga cuando todavía
+  no existe una actualización válida cargada por el usuario.
+- Estado activo: la aplicación guarda el DataFrame validado en
+  `st.session_state["datos_activos"]` y el nombre del archivo en
+  `st.session_state["nombre_archivo_activo"]`.
+- Errores: si un archivo nuevo es inválido, se muestra un mensaje comprensible y
+  no se reemplazan los datos activos.
+- Alcance: esta fase no aplica pruebas estadísticas, gráficos, correlación,
+  regresión ni conclusiones inferenciales.
