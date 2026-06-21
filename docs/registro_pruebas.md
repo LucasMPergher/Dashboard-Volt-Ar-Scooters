@@ -30,3 +30,55 @@ Validación automatizada ejecutada:
 .\.venv\Scripts\python.exe -m pytest -q
 32 passed
 ```
+
+## Fase P-03: carga y validación
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P03-T01 | Leer Excel válido. | `BytesIO` con hoja `datos`. | DataFrame válido. | DataFrame 48 x 4. | Aprobada | Lógica desacoplada de widgets. |
+| P03-T02 | Leer CSV con coma. | `BytesIO` UTF-8. | DataFrame válido. | DataFrame 48 x 4. | Aprobada | Separador detectado. |
+| P03-T03 | Leer CSV con punto y coma. | `BytesIO` UTF-8. | DataFrame válido. | DataFrame 48 x 4. | Aprobada | Separador detectado. |
+| P03-T04 | Conservar cuatro columnas. | Excel válido. | Cuatro columnas canónicas. | Cuatro columnas canónicas. | Aprobada | Sin quinta variable. |
+| P03-T05 | Reordenar columnas. | DataFrame con columnas desordenadas. | Orden canónico. | Orden canónico. | Aprobada | No modifica el original. |
+| P03-T06 | Rechazar Excel sin hoja `datos`. | Excel con otra hoja. | Error de formato. | Error con hojas encontradas. | Aprobada | No selecciona otra hoja. |
+| P03-T07 | Rechazar extensión no admitida. | `datos.txt`. | Error de formato. | Error de formato. | Aprobada | Solo `.xlsx` y `.csv`. |
+| P03-T08 | Rechazar archivo vacío. | CSV vacío. | Error claro. | Error claro. | Aprobada | Mensaje indica vacío/no interpretable. |
+| P03-T09 | Rechazar columna faltante. | Sin `Sucursal`. | Error de columnas. | Error de columnas. | Aprobada | Informa faltante. |
+| P03-T10 | Rechazar columna adicional. | Columna `Semana`. | Error de columnas. | Error de columnas. | Aprobada | Informa adicional. |
+| P03-T11 | Rechazar columna `Unnamed`. | Columna `Unnamed: 0`. | Error de columnas. | Error de columnas. | Aprobada | Evita índices exportados. |
+| P03-T12 | Rechazar menos de 30 filas. | 29 filas. | Error de cantidad. | Error de cantidad. | Aprobada | Rango 30-60. |
+| P03-T13 | Rechazar más de 60 filas. | 61 filas. | Error de cantidad. | Error de cantidad. | Aprobada | Rango 30-60. |
+| P03-T14 | Rechazar valores nulos. | Nulo en `Sucursal`. | Error de faltantes. | Error de faltantes. | Aprobada | Informa columna. |
+| P03-T15 | Rechazar sucursal inválida. | `Mendoza`. | Error de categorías. | Error de categorías. | Aprobada | No corrige nombres desconocidos. |
+| P03-T16 | Rechazar nivel inválido. | `Crítico`. | Error de categorías. | Error de categorías. | Aprobada | No corrige nombres desconocidos. |
+| P03-T17 | Normalizar mayúsculas y espacios. | Valores con espacios/case distinto. | Categorías canónicas. | Categorías canónicas. | Aprobada | Sin ambigüedad. |
+| P03-T18 | Rechazar antigüedad decimal. | `10.5`. | Error numérico. | Error numérico. | Aprobada | No acepta decimales no enteros. |
+| P03-T19 | Rechazar antigüedad fuera de rango. | 49 meses. | Error numérico. | Error numérico. | Aprobada | Rango 1-48. |
+| P03-T20 | Rechazar autonomía fuera de rango. | 46 km. | Error numérico. | Error numérico. | Aprobada | Rango 15-45. |
+| P03-T21 | Rechazar infinitos. | `np.inf`. | Error numérico. | Error numérico. | Aprobada | No acepta infinitos. |
+| P03-T22 | No modificar DataFrame original. | DataFrame con valores normalizables. | Copia normalizada. | Original intacto. | Aprobada | Validador no muta silenciosamente. |
+| P03-T23 | Archivo inválido no válido. | CSV con categoría inválida. | Excepción. | Excepción. | Aprobada | No devuelve DataFrame activo. |
+
+Validación automatizada ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+55 passed
+```
+
+## Fase P-03: validación manual en Streamlit
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P03-M01 | Verificar carga automática del archivo predeterminado. | `data/volt_ar_semana_01.xlsx`. | La app carga el conjunto predeterminado al iniciar. | Carga automática aprobada. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M02 | Cargar Excel válido con hoja `datos`. | Archivo `.xlsx` válido alternativo. | El archivo reemplaza los datos activos. | Carga aprobada. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M03 | Cargar CSV válido con coma. | Archivo `.csv` separado por coma. | El archivo reemplaza los datos activos. | Carga aprobada. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M04 | Cargar CSV válido con punto y coma. | Archivo `.csv` separado por punto y coma. | El archivo reemplaza los datos activos. | Carga aprobada. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M05 | Rechazar Excel sin hoja `datos`. | Archivo `.xlsx` sin hoja `datos`. | La app muestra error claro y conserva datos activos. | Rechazo aprobado. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M06 | Rechazar archivo con columna faltante. | Archivo sin una columna requerida. | La app muestra error claro y conserva datos activos. | Rechazo aprobado. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M07 | Rechazar archivo con menos de 30 filas. | Archivo con muestra insuficiente. | La app muestra error claro y conserva datos activos. | Rechazo aprobado. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M08 | Rechazar categoría desconocida. | Archivo con categoría no permitida. | La app muestra error claro y conserva datos activos. | Rechazo aprobado. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M09 | Rechazar columna adicional. | Archivo con columna extra. | La app muestra error claro y conserva datos activos. | Rechazo aprobado. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M10 | Conservar conjunto válido anterior tras carga inválida. | Carga válida seguida de carga inválida. | Los datos activos no se sustituyen. | Conservación aprobada. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M11 | Restaurar archivo predeterminado. | Botón `Volver a datos predeterminados`. | La app restaura `data/volt_ar_semana_01.xlsx`. | Botón aprobado. | Aprobada | Validado manualmente en Streamlit. |
+| P03-M12 | Persistir datos activos al navegar. | Navegación entre páginas. | `st.session_state["datos_activos"]` se mantiene disponible. | Persistencia aprobada. | Aprobada | Validado manualmente en Streamlit. |

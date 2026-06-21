@@ -11,6 +11,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-00 | 2026-06-21 | Codex | Inspección del repositorio | Verificar repositorio, rama activa, remoto y estado del árbol de trabajo antes de realizar modificaciones. | Se confirmó el repositorio `Dashboard-Volt-Ar-Scooters`, la rama `setup-inicial`, el remoto correcto y el árbol de trabajo limpio. | `git branch --show-current`; `git remote -v`; `git status`. | No aplica, porque no se modificaron archivos. |
 | P-01 | 2026-06-21 | Codex | Configuración inicial del proyecto | Crear la estructura inicial del dashboard académico con Python y Streamlit. | Se creó la estructura de carpetas, portada, páginas de Streamlit, configuración de cuatro variables estadísticas, documentos metodológicos y pruebas iniciales reales. | Compilación Python correcta; `10 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores; `.venv` ignorado por Git. | Propuesto: `chore: crear estructura inicial del dashboard`. |
 | P-02 | 2026-06-21 | Codex | Simulación de datos | Implementar un generador reproducible de datos semanales simulados y crear `data/volt_ar_semana_01.xlsx`. | Se implementó el simulador, la CLI, las validaciones técnicas, las pruebas automatizadas y el archivo Excel inicial. | Compilación Python correcta; `32 passed` con Pytest; CLI generó el Excel; métricas revisadas con Pandas; `git diff --check` sin errores. | Propuesto: `feat: agregar simulacion reproducible de datos semanales`. |
+| P-03 | 2026-06-21 | Codex | Carga y validación | Implementar carga dinámica de archivos semanales y validar su estructura antes de usarlos en el dashboard. | Se implementó carga de `.xlsx` y `.csv`, validación/normalización, componente Streamlit con `session_state` y pruebas automatizadas. | Compilación Python correcta; `55 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar carga y validacion de datos semanales`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -683,6 +684,409 @@ registraron correcciones manuales sobre los resultados generados.
 
 ```text
 feat: agregar simulacion reproducible de datos semanales
+```
+
+## P-03 — Carga y validación
+
+### Fecha
+
+2026-06-21.
+
+### Herramienta
+
+Codex.
+
+### Etapa
+
+Carga y validación de la actualización semanal.
+
+### Objetivo
+
+Implementar el mecanismo de carga dinámica de archivos semanales, validar su
+estructura y mantener el conjunto activo para las páginas del dashboard sin
+implementar todavía análisis estadísticos.
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/carga-validacion`.
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma la rama activa.
+3. Ejecuta `git status --short --branch`.
+4. Inspecciona:
+
+   * `src/config.py`
+   * `src/carga_datos.py`
+   * `src/validacion_datos.py`
+   * `app.py`
+   * las páginas de Streamlit;
+   * los tests;
+   * la documentación.
+5. Presenta un plan breve.
+6. No realices commit, push, merge ni Pull Request.
+
+# Fase P-03: carga y validación de la actualización semanal
+
+## Objetivo
+
+Implementar el mecanismo de carga dinámica de archivos semanales y validar su estructura antes de utilizarlos en el dashboard.
+
+La aplicación debe aceptar una nueva matriz de datos, validarla y mantenerla como conjunto activo para las dos páginas.
+
+No implementes todavía:
+
+* Tabla de contingencia definitiva.
+* Prueba Chi-cuadrado.
+* Correlación.
+* Regresión.
+* Gráficos estadísticos.
+* Intervalos.
+* Predicciones.
+* Conclusiones inferenciales.
+
+## Formatos admitidos
+
+Aceptar:
+
+* `.xlsx`
+* `.csv`
+
+Para Excel, utilizar preferentemente la hoja `datos`.
+
+Si el archivo Excel no contiene una hoja llamada `datos`, devolver un mensaje claro indicando las hojas encontradas. No seleccionar silenciosamente otra hoja.
+
+Para CSV:
+
+* detectar correctamente UTF-8;
+* admitir separador coma o punto y coma cuando sea posible;
+* informar un error claro cuando no pueda interpretarse.
+
+## Estructura requerida
+
+Los datos deben contener exactamente estas cuatro columnas:
+
+1. `Sucursal`
+2. `Nivel_Fallos`
+3. `Antiguedad_Bateria_Meses`
+4. `Autonomia_Real_Km`
+
+Si están en otro orden pero contienen exactamente el mismo conjunto, reordenarlas al orden canónico.
+
+Rechazar:
+
+* columnas faltantes;
+* columnas adicionales;
+* columnas `Unnamed`;
+* archivos vacíos;
+* menos de 30 filas;
+* más de 60 filas.
+
+## Validaciones de contenido
+
+### Sucursal
+
+Valores admitidos:
+
+* Rosario
+* Córdoba
+
+Eliminar espacios al inicio y al final.
+
+Normalizar diferencias de mayúsculas y minúsculas cuando no exista ambigüedad.
+
+No inventar ni corregir automáticamente nombres desconocidos.
+
+### Nivel_Fallos
+
+Valores admitidos:
+
+* Bajo
+* Medio
+* Alto
+
+Eliminar espacios y normalizar mayúsculas y minúsculas.
+
+### Antiguedad_Bateria_Meses
+
+* Debe ser convertible a entero.
+* Valores entre 1 y 48.
+* No aceptar decimales no enteros.
+* No aceptar infinitos.
+
+### Autonomia_Real_Km
+
+* Debe ser convertible a número.
+* Valores entre 15 y 45.
+* No aceptar infinitos.
+
+### Controles generales
+
+* No permitir valores nulos.
+* No exigir que las filas sean únicas, porque sin un identificador dos monopatines pueden tener valores coincidentes.
+* No aplicar todavía pruebas estadísticas.
+* No modificar valores numéricos válidos.
+* Los mensajes de error deben indicar columna, problema y, cuando resulte posible, filas afectadas.
+
+## Arquitectura
+
+Completa principalmente:
+
+* `src/carga_datos.py`
+* `src/validacion_datos.py`
+
+Implementa funciones pequeñas, tipadas y documentadas, equivalentes a:
+
+```python
+def leer_archivo_excel(origen: str | Path | BinaryIO) -> pandas.DataFrame:
+    ...
+```
+
+```python
+def leer_archivo_csv(origen: str | Path | BinaryIO) -> pandas.DataFrame:
+    ...
+```
+
+```python
+def cargar_archivo_semanal(
+    origen: str | Path | BinaryIO,
+    nombre_archivo: str,
+) -> pandas.DataFrame:
+    ...
+```
+
+```python
+def validar_y_normalizar_datos(
+    datos: pandas.DataFrame,
+) -> pandas.DataFrame:
+    ...
+```
+
+La función de validación debe devolver una copia normalizada y no modificar silenciosamente el DataFrame original.
+
+Crea excepciones específicas o una estructura clara para distinguir:
+
+* Error de formato.
+* Error de columnas.
+* Error de cantidad de filas.
+* Error de categorías.
+* Error de valores numéricos.
+* Error de valores faltantes.
+
+Evita duplicar constantes ya existentes en `src/config.py`.
+
+## Integración Streamlit
+
+Implementa un componente reutilizable de carga, manteniendo separada la interfaz de la lógica.
+
+Puedes crear un módulo como:
+
+`src/interfaz_carga.py`
+
+El componente debe:
+
+1. Mostrar un `file_uploader` en la barra lateral.
+2. Aceptar Excel o CSV.
+3. Utilizar `data/volt_ar_semana_01.xlsx` como datos predeterminados cuando todavía no se haya cargado otro archivo.
+4. Almacenar el DataFrame validado en:
+
+```python
+st.session_state["datos_activos"]
+```
+
+5. Almacenar el nombre del archivo en:
+
+```python
+st.session_state["nombre_archivo_activo"]
+```
+
+6. No sustituir los datos activos cuando un nuevo archivo sea inválido.
+7. Mostrar confirmación cuando la carga sea válida.
+8. Mostrar errores comprensibles cuando sea inválida.
+9. Mostrar:
+
+   * nombre del archivo activo;
+   * cantidad de observaciones;
+   * cuatro variables detectadas;
+   * una vista previa de hasta diez filas.
+10. Permitir volver al archivo predeterminado mediante un botón.
+
+Integra el componente en `app.py` y deja los datos disponibles para las dos páginas.
+
+Si Streamlit multipágina no comparte automáticamente la inicialización al acceder directamente a una página, implementa una función reutilizable que garantice la carga del conjunto predeterminado sin duplicar código.
+
+## Comportamiento dinámico
+
+Cuando el usuario carga un archivo válido:
+
+* deben reemplazarse los datos activos;
+* la vista previa debe actualizarse;
+* cualquier futura página que consulte `datos_activos` debe recibir el nuevo DataFrame.
+
+Todavía no implementes los cálculos estadísticos que utilizarán esos datos.
+
+## Pruebas
+
+Crea pruebas para:
+
+1. Lectura de un Excel válido.
+2. Lectura de un CSV válido con coma.
+3. Lectura de un CSV válido con punto y coma.
+4. Conservación de las cuatro columnas.
+5. Reordenamiento al orden canónico.
+6. Archivo Excel sin hoja `datos`.
+7. Extensión no admitida.
+8. Archivo vacío.
+9. Columna faltante.
+10. Columna adicional.
+11. Columna `Unnamed`.
+12. Menos de 30 filas.
+13. Más de 60 filas.
+14. Valores nulos.
+15. Sucursal inválida.
+16. Nivel de fallos inválido.
+17. Normalización de mayúsculas y espacios.
+18. Antigüedad decimal no entera.
+19. Antigüedad fuera de rango.
+20. Autonomía fuera de rango.
+21. Valores infinitos.
+22. El DataFrame original no debe modificarse.
+23. Un archivo inválido no debe considerarse válido.
+
+No realices tests frágiles sobre widgets visuales. Prueba la lógica desacoplada mediante `BytesIO`, archivos temporales y DataFrames.
+
+## Documentación
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+En `docs/prompts.md`, conserva P-00, P-01 y P-02 y agrega P-03 con el prompt completo.
+
+Documenta:
+
+* formatos admitidos;
+* reglas de validación;
+* comportamiento del archivo predeterminado;
+* utilización de `session_state`;
+* tratamiento de errores;
+* decisión de no eliminar duplicados;
+* actualización automática al cargar otra semana.
+
+## Validaciones finales
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+Verifica que Streamlit inicie y luego detén el proceso.
+
+Ejecuta también:
+
+```powershell
+git diff --check
+git status --short
+```
+
+## Revisión manual solicitada
+
+Informa cómo probar manualmente:
+
+1. El Excel predeterminado.
+2. Un Excel válido alternativo.
+3. Un CSV válido.
+4. Un archivo sin una columna.
+5. Un archivo con menos de 30 filas.
+6. Un archivo con categorías inválidas.
+7. El botón para volver a los datos predeterminados.
+
+## Restricciones
+
+* No implementes análisis estadísticos.
+* No agregues datos nuevos aparte del archivo predeterminado existente.
+* No realices commit.
+* No hagas push.
+* No cambies de rama.
+* No crees Pull Request.
+* No elimines documentación anterior.
+
+## Informe final
+
+Reporta:
+
+1. Plan aplicado.
+2. Archivos creados.
+3. Archivos modificados.
+4. Funciones implementadas.
+5. Reglas de normalización.
+6. Total de pruebas aprobadas.
+7. Resultado del inicio de Streamlit.
+8. Casos manuales pendientes de probar.
+9. Advertencias.
+10. Estado de Git.
+11. Mensaje de commit propuesto.
+
+Detente y espera mi revisión.
+````
+
+### Archivos modificados
+
+- `README.md`
+- `app.py`
+- `docs/decisiones_metodologicas.md`
+- `docs/prompts.md`
+- `docs/registro_pruebas.md`
+- `src/carga_datos.py`
+- `src/interfaz_carga.py`
+- `src/validacion_datos.py`
+- `tests/test_carga_validacion.py`
+
+### Resultado
+
+Se implementó la lectura de Excel y CSV, la validación y normalización de la
+matriz semanal, las excepciones específicas de validación, el componente
+reutilizable de carga en Streamlit y las pruebas automatizadas de P-03.
+
+### Problemas encontrados
+
+- El primer ajuste de CSV no capturaba `_csv.Error` para archivos vacíos; se
+  corrigió para devolver `ErrorFormatoArchivo`.
+- Una prueba intentaba escribir `10.5` en una columna `int64` antes de llegar al
+  validador; se ajustó la prueba para representar el caso de entrada decimal.
+- Se modificó `app.py` porque la consigna pedía integrar allí el componente de
+  carga, aunque los cambios se mantuvieron fuera de las páginas.
+
+### Correcciones humanas
+
+No se registraron correcciones humanas sobre la implementación final.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- Inicio temporal de Streamlit en `http://127.0.0.1:8765`
+- `git diff --check`
+- `git status --short`
+
+### Commit propuesto
+
+```text
+feat: agregar carga y validacion de datos semanales
 ```
 
 ## Plantilla para próximos registros
