@@ -169,3 +169,47 @@ Validación temporal de Streamlit:
 .\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
 Inicio controlado sin errores visibles de importación o sintaxis; el proceso fue detenido.
 ```
+
+## Fase P-06: inferencia cualitativa
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P06-T01 | Calcular frecuencias esperadas. | Tabla predeterminada. | `[[8.5, 9.5, 6.0], [8.5, 9.5, 6.0]]`. | Coincidencia. | Aprobada | Fórmula de independencia. |
+| P06-T02 | Verificar fórmula manual de una celda. | Rosario-Bajo. | `24 * 17 / 48 = 8.5`. | 8.5. | Aprobada | Control de Eij. |
+| P06-T03 | Conservar etiquetas y orden. | Tabla efectiva. | Rosario, Córdoba; Bajo, Medio, Alto. | Orden conservado. | Aprobada | Mantiene estructura P-04. |
+| P06-T04 | Igualar suma observada y esperada. | Tabla predeterminada. | Total 48. | Total 48. | Aprobada | Control de consistencia. |
+| P06-T05 | Calcular diferencias relativas. | Observadas y esperadas predeterminadas. | Porcentajes esperados. | Coincidencia. | Aprobada | Convención `(O - E) / E * 100`. |
+| P06-T06 | Verificar signo positivo. | O > E. | Diferencia positiva. | Positiva. | Aprobada | Interpretación por celda. |
+| P06-T07 | Verificar signo negativo. | O < E. | Diferencia negativa. | Negativa. | Aprobada | Interpretación por celda. |
+| P06-T08 | Verificar diferencia cero. | O = E. | 0 %. | 0 %. | Aprobada | Caso neutro. |
+| P06-T09 | Calcular aportes por celda. | Observadas y esperadas predeterminadas. | `(O - E)^2 / E`. | Coincidencia. | Aprobada | Complemento técnico. |
+| P06-T10 | Sumar aportes. | Tabla predeterminada. | Suma igual a Chi-cuadrado. | 19.170279. | Aprobada | Coincide con el estadístico. |
+| P06-T11 | Evaluar robustez cumplida. | Esperadas predeterminadas. | Mínima 6, 100 % >= 5. | Robusta. | Aprobada | Criterios cumplidos. |
+| P06-T12 | Detectar esperada menor que 1. | Tabla esperada controlada. | Incumplimiento absoluto. | Incumplimiento detectado. | Aprobada | No bloquea cálculo. |
+| P06-T13 | Detectar incumplimiento del 80 %. | Tabla esperada controlada. | No robusta. | No robusta. | Aprobada | Porcentaje >= 5 insuficiente. |
+| P06-T14 | Confirmar p-valor independiente de α. | α 0.01 y 0.10. | p-valor sin cambios. | Sin cambios. | Aprobada | Solo cambia decisión. |
+| P06-T15 | Decidir rechazo. | p 0.01, α 0.05. | Se rechaza H0. | Se rechaza H0. | Aprobada | Regla `p < α`. |
+| P06-T16 | Decidir no rechazo. | p 0.08 y p 0.05 con α 0.05. | No se rechaza H0. | No se rechaza H0. | Aprobada | Regla `p >= α`. |
+| P06-T17 | Evitar "aceptar H0". | Texto de decisión. | No contiene aceptar. | No contiene aceptar. | Aprobada | Respeta consigna. |
+| P06-T18 | Conclusión de rechazo contextualizada. | p 0.01, α 0.05. | Asociación y escenario simulado. | Texto correcto. | Aprobada | Conclusión poblacional simulada. |
+| P06-T19 | Conclusión de no rechazo cautelosa. | p 0.08, α 0.05. | No afirma independencia definitiva. | Texto correcto. | Aprobada | Evita conclusión categórica. |
+| P06-T20 | Validar resultado predeterminado. | `data/volt_ar_semana_01.xlsx`. | Chi-cuadrado 19.170279, gl 2, p 0.000068742747. | Coincidencia. | Aprobada | Reproduce la referencia esperada. |
+| P06-T21 | Manejar categoría ausente. | Tabla sin `Alto`. | Exclusión informada. | `Alto` excluida. | Aprobada | No inventa frecuencias. |
+| P06-T22 | Error con una sola categoría efectiva. | Tabla degenerada. | Error comprensible. | Error comprensible. | Aprobada | No muestra traza técnica. |
+| P06-T23 | Verificar hipótesis en Página 2. | `pages/2_Perfil_Analista.py`. | Contiene H0 y H1. | Contiene H0 y H1. | Aprobada | Con símbolos H₀ y H₁. |
+| P06-T24 | Verificar independencia como supuesto de diseño. | `pages/2_Perfil_Analista.py`. | Aclaración visible. | Aclaración presente. | Aprobada | No se marca como comprobada. |
+| P06-T25 | Confirmar P-04 y P-05 presentes. | `pages/1_Perfil_Gerencial.py`. | Módulos gerenciales conservados. | Conservados. | Aprobada | No se modificó funcionalidad gerencial. |
+
+Validación automatizada ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+127 passed
+```
+
+Validación de sintaxis ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+Sin errores.
+```

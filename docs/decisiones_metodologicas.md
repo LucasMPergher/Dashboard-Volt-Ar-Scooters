@@ -121,3 +121,50 @@
   y la misma pendiente que alimentan los indicadores KPI.
 - Residuos: se calculan internamente para verificación y reutilización
   posterior, pero no se muestran todavía en la interfaz gerencial.
+
+## Fase P-06: inferencia cualitativa
+
+- Enfoque de la Página 2: inferencial y poblacional. La prueba se interpreta en
+  el escenario poblacional simulado con fines académicos.
+- Variables analizadas: `Sucursal` y `Nivel_Fallos`.
+- Prueba utilizada: Chi-cuadrado de independencia, porque se dispone de una
+  muestra semanal y dos variables cualitativas observadas conjuntamente en cada
+  monopatín.
+- Hipótesis nula: la sucursal y el nivel de fallos técnicos son independientes
+  en la población de monopatines de Volt-Ar Scooters.
+- Hipótesis alternativa: la sucursal y el nivel de fallos técnicos no son
+  independientes; existe asociación entre ambas variables en la población.
+- Configuración del cálculo: `scipy.stats.chi2_contingency` con
+  `correction=False`. Los marginales no se incluyen en la prueba.
+- Frecuencias esperadas: se calculan con la fórmula
+  `Eij = total_fila_i * total_columna_j / N`, manteniendo etiquetas y orden de
+  la tabla observada efectiva.
+- Categorías ausentes: se excluyen del cálculo únicamente las filas o columnas
+  cuyo total observado es cero. No se inventan frecuencias.
+- Frecuencias diferenciales relativas: dado que el material disponible no
+  presenta una definición operacional explícita con ese nombre, el proyecto
+  adopta la convención `(O - E) / E`. En la interfaz se muestra como porcentaje:
+  `(O - E) / E * 100`.
+- Diferencias relativas: valores positivos indican frecuencias observadas
+  superiores a las esperadas bajo independencia; valores negativos indican
+  frecuencias inferiores; valores cercanos a cero indican proximidad entre
+  observadas y esperadas.
+- Aportes por celda: se calculan como `(O - E)^2 / E`. La suma de los aportes
+  coincide con el estadístico Chi-cuadrado.
+- Nivel de significancia: el deslizador cambia la decisión, pero no modifica el
+  p-valor.
+- Regla de decisión: si `p-valor < α`, se rechaza H0; si `p-valor >= α`, no se
+  rechaza H0. No se utiliza la expresión "se acepta H0".
+- Conclusión contextual: cuando se rechaza H0 se informa evidencia
+  estadísticamente significativa de asociación; cuando no se rechaza H0 se
+  indica que los datos disponibles no proporcionan evidencia suficiente, sin
+  afirmar independencia definitiva.
+- Independencia de observaciones: no puede verificarse únicamente con la matriz.
+  Se presenta como supuesto dependiente del diseño de recolección.
+- Categorías mutuamente excluyentes: se consideran respaldadas por la estructura
+  validada de datos.
+- Robustez: la aproximación Chi-cuadrado se considera robusta solo si ninguna
+  frecuencia esperada es menor que 1 y al menos el 80 % de las esperadas es
+  mayor o igual que 5.
+- Si no se cumplen los criterios de robustez, el cálculo no se bloquea, pero la
+  interfaz advierte que la aproximación debe interpretarse con precaución.
