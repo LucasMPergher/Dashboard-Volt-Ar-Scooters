@@ -55,3 +55,19 @@ Reglas principales de carga:
 
 Mientras no se cargue otro archivo válido, la aplicación utiliza
 `data/volt_ar_semana_01.xlsx` como archivo predeterminado.
+
+## Página gerencial: análisis cualitativo
+
+La Página 1 incorpora un módulo descriptivo y muestral para analizar la relación
+observada entre `Sucursal` y `Nivel_Fallos`.
+
+Incluye:
+
+- tabla de contingencia observada con totales marginales;
+- gráfico de barras agrupadas;
+- gráfico de barras apiladas al 100 %;
+- estadístico Chi-cuadrado muestral, grados de libertad y p-valor;
+- selector de nivel de significancia para una comparación neutral.
+
+La página no presenta una conclusión inferencial. La decisión formal sobre la
+población se reserva para la Página 2.

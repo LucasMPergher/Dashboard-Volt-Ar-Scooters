@@ -95,9 +95,27 @@ def _mostrar_boton_predeterminado() -> None:
 
 def _mostrar_resumen_datos(datos: pd.DataFrame, nombre_archivo: str) -> None:
     """Muestra nombre, cantidad, variables y vista previa del conjunto activo."""
+    cantidad_total = len(datos)
+    cantidad_vista_previa = min(10, cantidad_total)
+
     st.subheader("Datos activos")
     st.write(f"Archivo activo: `{nombre_archivo}`")
-    st.write(f"Cantidad de observaciones: `{len(datos)}`")
+    st.write(f"Cantidad de observaciones: `{cantidad_total}`")
     st.write("Variables detectadas:")
     st.write(", ".join(f"`{columna}`" for columna in VARIABLES_ESTADISTICAS))
-    st.dataframe(datos.head(10), use_container_width=True)
+    st.caption(
+        f"Vista previa: {cantidad_vista_previa} de {cantidad_total} registros"
+    )
+    st.dataframe(
+        datos.head(cantidad_vista_previa),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    with st.expander(f"Ver base completa ({cantidad_total} registros)"):
+        st.dataframe(
+            datos,
+            use_container_width=True,
+            hide_index=True,
+            height=400,
+        )
