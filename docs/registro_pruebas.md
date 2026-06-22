@@ -120,3 +120,52 @@ Validación automatizada ejecutada:
 | P04-M03 | Verificar visualización completa. | Expander `Ver base completa (48 registros)`. | El expander muestra los 48 registros completos. | Visualización completa aprobada. | Aprobada | Tabla con ancho adaptable e índice oculto. |
 | P04-M04 | Verificar conservación de 48 casos en análisis. | Tabla de contingencia de Página 1. | Los totales marginales suman 48. | Conservación aprobada. | Aprobada | Los cálculos usan `st.session_state["datos_activos"]` completo. |
 | P04-M05 | Verificar actualización dinámica al cambiar archivo. | Carga de otro archivo semanal válido. | Cantidad total, vista previa y expander se actualizan. | Actualización dinámica aprobada. | Aprobada | Validado manualmente en Streamlit. |
+
+## Fase P-05: módulo cuantitativo gerencial
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P05-T01 | Ajustar regresión con datos lineales conocidos. | DataFrame controlado. | Coeficientes esperados. | Coeficientes esperados. | Aprobada | Modelo lineal con intercepto. |
+| P05-T02 | Verificar pendiente positiva conocida. | Datos con pendiente 2.0. | Pearson positivo perfecto. | Pearson 1.0. | Aprobada | Control de dirección positiva. |
+| P05-T03 | Verificar pendiente negativa conocida. | Datos con pendiente negativa. | Pearson negativo perfecto. | Pearson -1.0. | Aprobada | Control de dirección negativa. |
+| P05-T04 | Verificar intercepto correcto. | Datos lineales con intercepto 45.0. | Intercepto 45.0. | Intercepto 45.0. | Aprobada | Sin redondeo interno. |
+| P05-T05 | Verificar rango de Pearson. | Datos negativos no perfectos. | Valor entre -1 y 1. | Valor dentro de rango. | Aprobada | Control matemático. |
+| P05-T06 | Verificar rango de R². | Datos negativos no perfectos. | Valor entre 0 y 1. | Valor dentro de rango. | Aprobada | Control matemático. |
+| P05-T07 | Comparar R² con r². | Regresión simple con intercepto. | Coincidencia aproximada. | Coincidencia aproximada. | Aprobada | Propiedad del modelo simple. |
+| P05-T08 | Conservar longitud de valores ajustados. | DataFrame controlado. | Una salida por fila. | Misma cantidad. | Aprobada | Resultado interno reutilizable. |
+| P05-T09 | Conservar longitud de residuos. | DataFrame controlado. | Un residuo por fila. | Misma cantidad. | Aprobada | No se muestra en Página 1. |
+| P05-T10 | Verificar media de residuos. | Modelo con intercepto. | Media aproximadamente cero. | Media aproximadamente cero. | Aprobada | Tolerancia numérica. |
+| P05-T11 | Construir recta con X ordenado. | Datos desordenados. | X creciente. | X creciente. | Aprobada | Evita unir puntos observados. |
+| P05-T12 | Usar coeficientes reales en la recta. | Datos negativos no perfectos. | Misma pendiente e intercepto. | Coincidencia. | Aprobada | No depende del redondeo visual. |
+| P05-T13 | Rechazar X constante. | DataFrame con antigüedad fija. | Error comprensible. | Error comprensible. | Aprobada | No muestra traza técnica. |
+| P05-T14 | Rechazar Y constante. | DataFrame con autonomía fija. | Error comprensible. | Error comprensible. | Aprobada | No ajusta modelo inválido. |
+| P05-T15 | Rechazar valores no finitos. | Autonomía infinita. | Error comprensible. | Error comprensible. | Aprobada | Control previo al modelo. |
+| P05-T16 | Interpretar sentido negativo. | Pearson -0.85. | Texto con `negativa`. | Texto correcto. | Aprobada | Referido a la muestra semanal. |
+| P05-T17 | Interpretar sentido positivo. | Pearson 0.65. | Texto con `positiva`. | Texto correcto. | Aprobada | Referido a la muestra semanal. |
+| P05-T18 | Clasificar rangos de intensidad. | Coeficientes 0.10, 0.30, 0.50, 0.70 y 0.90. | Muy débil, débil, moderada, fuerte y muy fuerte. | Clasificación correcta. | Aprobada | Criterio heurístico documentado. |
+| P05-T19 | Interpretar R² como porcentaje. | R² 0.810942. | 81.09 % y referencia muestral. | Texto correcto. | Aprobada | Sin causalidad. |
+| P05-T20 | Validar Excel predeterminado. | `data/volt_ar_semana_01.xlsx`. | 48 observaciones, pendiente y Pearson negativos. | 48 observaciones, Pearson -0.900523 y R² 0.810942. | Aprobada | Coincide con referencia de P-02. |
+| P05-T21 | Revisar frases prohibidas en Página 1. | `pages/1_Perfil_Gerencial.py`. | Sin causalidad ni conclusión poblacional. | Sin frases prohibidas. | Aprobada | Página gerencial descriptiva. |
+| P05-T22 | Confirmar que P-04 continúa presente. | `pages/1_Perfil_Gerencial.py`. | Módulo cualitativo conservado. | Módulo conservado. | Aprobada | No se eliminó la tabla de contingencia. |
+| P05-T23 | Confirmar módulo cuantitativo visible. | `pages/1_Perfil_Gerencial.py`. | Sección, función de ajuste y recta. | Elementos presentes. | Aprobada | Integración de Página 1. |
+
+Validación automatizada ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+102 passed
+```
+
+Validación de sintaxis ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+Sin errores.
+```
+
+Validación temporal de Streamlit:
+
+```text
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+Inicio controlado sin errores visibles de importación o sintaxis; el proceso fue detenido.
+```

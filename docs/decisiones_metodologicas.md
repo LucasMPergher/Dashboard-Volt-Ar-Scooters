@@ -87,3 +87,37 @@
 - Página 1: puede mostrar estadístico, grados de libertad y p-valor por
   consigna, pero no muestra decisión inferencial. La conclusión formal queda
   reservada para la Página 2.
+
+## Fase P-05: módulo cuantitativo gerencial
+
+- Enfoque de la Página 1: descriptivo y muestral. El módulo cuantitativo resume
+  la relación observada en la semana activa sin extender la conclusión a toda la
+  población.
+- Variable independiente X: `Antiguedad_Bateria_Meses`.
+- Variable dependiente Y: `Autonomia_Real_Km`.
+- Modelo utilizado: regresión lineal simple con intercepto, ajustada con
+  `statsmodels` para poder reutilizar el resultado en la Página 2.
+- Pendiente: representa el cambio promedio muestral en la autonomía real, en
+  kilómetros, asociado a un mes adicional de antigüedad de batería dentro de la
+  recta ajustada.
+- Intercepto: representa el valor de la recta cuando la antigüedad es cero
+  meses. Se usa como parámetro técnico del modelo y no como observación real de
+  la muestra.
+- Pearson: se interpreta como medida descriptiva de dirección e intensidad
+  lineal en la muestra semanal, no como prueba de hipótesis.
+- Criterio heurístico de intensidad de `|r|`: menor que 0,20 muy débil; desde
+  0,20 y menor que 0,40 débil; desde 0,40 y menor que 0,60 moderada; desde 0,60
+  y menor que 0,80 fuerte; desde 0,80 hasta 1 muy fuerte.
+- R²: se interpreta como porcentaje de variabilidad observada en la autonomía
+  que queda explicada descriptivamente por el modelo lineal con la antigüedad.
+- En regresión lineal simple con intercepto se controla que R² coincida
+  aproximadamente con el cuadrado del coeficiente de Pearson.
+- Asociación y causalidad: la relación negativa observada no se presenta como
+  causalidad. La Página 1 evita expresiones como que X causa Y.
+- Muestra e inferencia: la Página 1 puede mostrar coeficientes muestrales, pero
+  no hipótesis, estadístico t, intervalos, predicciones ni conclusiones
+  poblacionales.
+- Coherencia visual: la recta del gráfico se construye con el mismo intercepto
+  y la misma pendiente que alimentan los indicadores KPI.
+- Residuos: se calculan internamente para verificación y reutilización
+  posterior, pero no se muestran todavía en la interfaz gerencial.
