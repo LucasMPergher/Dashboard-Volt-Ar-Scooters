@@ -82,3 +82,41 @@ Validación automatizada ejecutada:
 | P03-M10 | Conservar conjunto válido anterior tras carga inválida. | Carga válida seguida de carga inválida. | Los datos activos no se sustituyen. | Conservación aprobada. | Aprobada | Validado manualmente en Streamlit. |
 | P03-M11 | Restaurar archivo predeterminado. | Botón `Volver a datos predeterminados`. | La app restaura `data/volt_ar_semana_01.xlsx`. | Botón aprobado. | Aprobada | Validado manualmente en Streamlit. |
 | P03-M12 | Persistir datos activos al navegar. | Navegación entre páginas. | `st.session_state["datos_activos"]` se mantiene disponible. | Persistencia aprobada. | Aprobada | Validado manualmente en Streamlit. |
+
+## Fase P-04: módulo cualitativo gerencial
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P04-T01 | Construir tabla de contingencia. | DataFrame controlado. | Frecuencias correctas. | Frecuencias correctas. | Aprobada | `Sucursal` por `Nivel_Fallos`. |
+| P04-T02 | Mantener orden de filas y columnas. | DataFrame controlado. | Rosario, Córdoba; Bajo, Medio, Alto. | Orden correcto. | Aprobada | Categorías canónicas. |
+| P04-T03 | Calcular totales marginales. | Tabla observada. | Totales de filas y columnas correctos. | Totales correctos. | Aprobada | Solo para visualización. |
+| P04-T04 | Evitar que marginales alteren la prueba. | Tabla con y sin marginales. | Mismo estadístico y p-valor. | Coincidencia. | Aprobada | La función descarta `Total`. |
+| P04-T05 | Comparar Chi-cuadrado con SciPy. | Tabla 2 x 3. | Coincidencia con `chi2_contingency`. | Coincidencia. | Aprobada | `correction=False`. |
+| P04-T06 | Verificar grados de libertad. | Tabla 2 x 3. | 2 grados. | 2 grados. | Aprobada | Fórmula implícita de SciPy. |
+| P04-T07 | Verificar rango del p-valor. | Tabla 2 x 3. | Entre 0 y 1. | Entre 0 y 1. | Aprobada | Control técnico. |
+| P04-T08 | Validar dimensión de esperadas. | Tabla efectiva. | Misma dimensión. | Misma dimensión. | Aprobada | Sin marginales. |
+| P04-T09 | Validar suma de esperadas. | Tabla efectiva. | Igual al total observado. | Igual al total observado. | Aprobada | Control de consistencia. |
+| P04-T10 | Validar estadístico no negativo. | Tabla 2 x 3. | Mayor o igual a cero. | Mayor o igual a cero. | Aprobada | Control matemático. |
+| P04-T11 | Confirmar p-valor independiente de α. | Comparaciones con α distintos. | p-valor sin cambios. | p-valor sin cambios. | Aprobada | Solo cambia la comparación visual. |
+| P04-T12 | Manejar categoría válida ausente. | Tabla sin `Alto`. | Cálculo con tabla efectiva 2 x 2. | Cálculo correcto. | Aprobada | No inventa observaciones. |
+| P04-T13 | Informar error con una sola categoría observada. | Solo una sucursal observada. | Error comprensible. | Error comprensible. | Aprobada | No rompe Streamlit. |
+| P04-T14 | Verificar porcentajes por sucursal. | Tabla observada. | Cada sucursal suma 100 %. | Suma 100 %. | Aprobada | Alimenta gráfico apilado. |
+| P04-T15 | Probar Excel predeterminado. | `data/volt_ar_semana_01.xlsx`. | Cálculo cualitativo válido. | Cálculo válido. | Aprobada | Chi-cuadrado 19.170279. |
+| P04-T16 | Revisar frases prohibidas en página. | `pages/1_Perfil_Gerencial.py`. | Sin conclusiones inferenciales prohibidas. | Sin frases prohibidas. | Aprobada | Página gerencial descriptiva. |
+
+Validación automatizada ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+71 passed
+```
+
+## Fase P-04: validación manual de vista previa
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P04-M01 | Verificar cantidad total visible. | `data/volt_ar_semana_01.xlsx`. | La interfaz informa 48 observaciones activas. | Cantidad total visible aprobada. | Aprobada | Validado manualmente en Streamlit. |
+| P04-M02 | Verificar vista previa limitada. | Archivo activo de 48 filas. | La interfaz muestra `Vista previa: 10 de 48 registros`. | Vista previa limitada aprobada. | Aprobada | `head()` se usa solo para la vista previa. |
+| P04-M03 | Verificar visualización completa. | Expander `Ver base completa (48 registros)`. | El expander muestra los 48 registros completos. | Visualización completa aprobada. | Aprobada | Tabla con ancho adaptable e índice oculto. |
+| P04-M04 | Verificar conservación de 48 casos en análisis. | Tabla de contingencia de Página 1. | Los totales marginales suman 48. | Conservación aprobada. | Aprobada | Los cálculos usan `st.session_state["datos_activos"]` completo. |
+| P04-M05 | Verificar actualización dinámica al cambiar archivo. | Carga de otro archivo semanal válido. | Cantidad total, vista previa y expander se actualizan. | Actualización dinámica aprobada. | Aprobada | Validado manualmente en Streamlit. |

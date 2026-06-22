@@ -64,3 +64,26 @@
   no se reemplazan los datos activos.
 - Alcance: esta fase no aplica pruebas estadísticas, gráficos, correlación,
   regresión ni conclusiones inferenciales.
+
+## Fase P-04: módulo cualitativo gerencial
+
+- Enfoque de la Página 1: descriptivo y muestral. La página resume la muestra
+  semanal activa sin formular conclusiones inferenciales sobre la población.
+- Variables analizadas: `Sucursal` en filas y `Nivel_Fallos` en columnas.
+- Orden de categorías: Rosario, Córdoba para `Sucursal`; Bajo, Medio, Alto para
+  `Nivel_Fallos`.
+- Tabla visual: se muestran totales marginales de filas y columnas para lectura
+  gerencial.
+- Cálculo Chi-cuadrado: los marginales no forman parte de la tabla enviada a
+  `scipy.stats.chi2_contingency`.
+- Configuración del cálculo: se utiliza `correction=False`, sin corrección de
+  Yates, sobre la tabla efectiva observada.
+- Categorías ausentes: se conservan en la tabla descriptiva con frecuencia cero,
+  pero se eliminan únicamente para el cálculo si su total marginal es cero.
+- Condición mínima: para calcular Chi-cuadrado deben existir al menos dos
+  categorías observadas en cada variable.
+- Nivel de significancia: el deslizador cambia solo la comparación visual con
+  α. El p-valor se calcula exclusivamente desde los datos y no cambia con α.
+- Página 1: puede mostrar estadístico, grados de libertad y p-valor por
+  consigna, pero no muestra decisión inferencial. La conclusión formal queda
+  reservada para la Página 2.

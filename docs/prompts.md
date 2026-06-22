@@ -12,6 +12,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-01 | 2026-06-21 | Codex | Configuración inicial del proyecto | Crear la estructura inicial del dashboard académico con Python y Streamlit. | Se creó la estructura de carpetas, portada, páginas de Streamlit, configuración de cuatro variables estadísticas, documentos metodológicos y pruebas iniciales reales. | Compilación Python correcta; `10 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores; `.venv` ignorado por Git. | Propuesto: `chore: crear estructura inicial del dashboard`. |
 | P-02 | 2026-06-21 | Codex | Simulación de datos | Implementar un generador reproducible de datos semanales simulados y crear `data/volt_ar_semana_01.xlsx`. | Se implementó el simulador, la CLI, las validaciones técnicas, las pruebas automatizadas y el archivo Excel inicial. | Compilación Python correcta; `32 passed` con Pytest; CLI generó el Excel; métricas revisadas con Pandas; `git diff --check` sin errores. | Propuesto: `feat: agregar simulacion reproducible de datos semanales`. |
 | P-03 | 2026-06-21 | Codex | Carga y validación | Implementar carga dinámica de archivos semanales y validar su estructura antes de usarlos en el dashboard. | Se implementó carga de `.xlsx` y `.csv`, validación/normalización, componente Streamlit con `session_state` y pruebas automatizadas. | Compilación Python correcta; `55 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar carga y validacion de datos semanales`. |
+| P-04 | 2026-06-21 | Codex | Módulo cualitativo gerencial | Implementar el análisis cualitativo descriptivo y muestral de la Página 1. | Se implementó tabla de contingencia, marginales, gráficos, Chi-cuadrado muestral y métricas sin conclusión inferencial. | Compilación Python correcta; `71 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar modulo cualitativo gerencial`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -1087,6 +1088,423 @@ No se registraron correcciones humanas sobre la implementación final.
 
 ```text
 feat: agregar carga y validacion de datos semanales
+```
+
+## P-04 — Módulo cualitativo gerencial
+
+### Fecha
+
+2026-06-21.
+
+### Herramienta
+
+Codex.
+
+### Etapa
+
+Módulo cualitativo descriptivo y muestral.
+
+### Objetivo
+
+Implementar el módulo cualitativo de la Página 1 para perfil gerencial, usando
+`Sucursal` como variable de filas y `Nivel_Fallos` como variable de columnas,
+sin formular conclusiones inferenciales sobre la población.
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/modulo-cualitativo-gerencial`.
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma la rama activa.
+3. Verifica que el árbol de trabajo esté limpio.
+4. Inspecciona:
+
+   * `src/analisis_cualitativo.py`
+   * `src/interfaz_carga.py`
+   * `src/config.py`
+   * `pages/1_Perfil_Gerencial.py`
+   * los tests existentes;
+   * la documentación.
+5. Presenta un plan breve.
+6. No realices commit, push, merge ni Pull Request.
+
+# Fase P-04: módulo cualitativo descriptivo y muestral
+
+## Objetivo
+
+Implementar el módulo cualitativo de la Página 1 del dashboard para un perfil gerencial.
+
+El análisis utilizará:
+
+* Variable de filas: `Sucursal`.
+* Variable de columnas: `Nivel_Fallos`.
+
+La página tendrá enfoque descriptivo y muestral.
+
+No debe incluir conclusiones inferenciales sobre la población.
+
+## Fuente de datos
+
+La página debe utilizar el DataFrame activo almacenado en:
+
+```python
+st.session_state["datos_activos"]
+```
+
+Debe garantizar que existan datos activos incluso cuando el usuario acceda directamente a la página.
+
+Reutiliza las funciones de `src/interfaz_carga.py`.
+
+No dupliques la lógica de lectura ni validación.
+
+Debe mostrarse:
+
+* nombre del archivo activo;
+* cantidad de observaciones;
+* posibilidad de cargar otro archivo semanal desde la barra lateral;
+* posibilidad de volver al archivo predeterminado.
+
+## Lógica estadística
+
+Completa `src/analisis_cualitativo.py` con funciones tipadas, documentadas y separadas de Streamlit.
+
+Implementa funcionalidad equivalente a:
+
+```python
+def construir_tabla_contingencia(
+    datos: pandas.DataFrame,
+) -> pandas.DataFrame:
+    ...
+```
+
+```python
+def agregar_marginales(
+    tabla: pandas.DataFrame,
+) -> pandas.DataFrame:
+    ...
+```
+
+```python
+def calcular_chi_cuadrado_muestral(
+    tabla_observada: pandas.DataFrame,
+) -> ResultadoChiCuadrado:
+    ...
+```
+
+Puedes utilizar una `dataclass` para devolver:
+
+* tabla observada;
+* frecuencias esperadas;
+* estadístico Chi-cuadrado;
+* grados de libertad;
+* p-valor;
+* frecuencia esperada mínima;
+* porcentaje de frecuencias esperadas mayores o iguales a 5.
+
+Usa:
+
+```python
+scipy.stats.chi2_contingency
+```
+
+sin corrección de Yates para la tabla 2 × 3:
+
+```python
+correction=False
+```
+
+No implementes manualmente una fórmula diferente a la de SciPy salvo para una verificación de pruebas.
+
+## Orden de categorías
+
+Mantén el orden:
+
+### Sucursal
+
+1. Rosario
+2. Córdoba
+
+### Nivel de fallos
+
+1. Bajo
+2. Medio
+3. Alto
+
+La tabla visual debe incluir los totales marginales de filas y columnas.
+
+Los marginales no deben enviarse a `chi2_contingency`.
+
+## Categorías no observadas
+
+La lógica debe manejar archivos semanales donde alguna categoría válida no aparezca.
+
+Para calcular Chi-cuadrado:
+
+* elimina únicamente filas o columnas con total marginal igual a cero;
+* exige al menos dos categorías observadas en cada variable;
+* si no se puede calcular la prueba, muestra una advertencia comprensible en la interfaz;
+* no dejes que Streamlit termine con una excepción técnica.
+
+No inventes observaciones para completar categorías ausentes.
+
+## Página gerencial
+
+Implementa en `pages/1_Perfil_Gerencial.py` solamente el módulo cualitativo.
+
+Debe contener:
+
+1. Título de la página.
+2. Identificación del archivo activo.
+3. Explicación breve del enfoque muestral.
+4. Sección “Análisis cualitativo”.
+5. Tabla de contingencia observada con marginales.
+6. Gráfico de barras agrupadas.
+7. Gráfico de barras apiladas al 100 %.
+8. Tarjetas o métricas para:
+
+   * Chi-cuadrado muestral;
+   * grados de libertad;
+   * p-valor;
+   * nivel de significancia seleccionado.
+9. Deslizador para el nivel de significancia.
+
+## Nivel de significancia
+
+Crear un deslizador con:
+
+* mínimo: 0.01;
+* máximo: 0.10;
+* valor inicial: 0.05;
+* paso: 0.01.
+
+El p-valor debe calcularse únicamente desde los datos y no debe cambiar cuando cambia el nivel de significancia.
+
+Puede mostrarse una comparación neutral:
+
+```text
+p-valor < α
+```
+
+o:
+
+```text
+p-valor ≥ α
+```
+
+Pero en esta página no debe mostrarse:
+
+* “se rechaza H₀”;
+* “no se rechaza H₀”;
+* “existe asociación poblacional”;
+* “las variables son independientes”;
+* ninguna conclusión sobre toda la población.
+
+Agrega una aclaración visible indicando que la conclusión inferencial se presentará en la Página 2.
+
+## Gráficos
+
+Utiliza Plotly.
+
+### Barras agrupadas
+
+* Eje X: Sucursal.
+* Series: Nivel_Fallos.
+* Eje Y: frecuencia observada.
+* Tooltip con categoría y frecuencia.
+* Título y ejes en español.
+
+### Barras apiladas al 100 %
+
+* Mostrar la composición porcentual del nivel de fallos dentro de cada sucursal.
+* Cada sucursal debe sumar 100 %.
+* Tooltip con frecuencia y porcentaje.
+* No utilizar los marginales para construir el gráfico.
+
+Los gráficos deben actualizarse automáticamente cuando cambien los datos activos.
+
+## Presentación
+
+No recargues manualmente los datos desde el Excel dentro de la página.
+
+No incluyas todavía:
+
+* frecuencias esperadas visibles;
+* frecuencias diferenciales relativas;
+* evaluación formal de robustez;
+* hipótesis estadísticas completas;
+* conclusión inferencial.
+
+Esos elementos corresponden a la Página 2.
+
+Puedes mostrar el estadístico y p-valor porque la consigna los exige en la Página 1, pero sin decisión inferencial.
+
+## Pruebas automatizadas
+
+Agrega pruebas para:
+
+1. Construcción correcta de la tabla de contingencia.
+2. Orden de filas y columnas.
+3. Totales marginales correctos.
+4. Los marginales no alteran la tabla usada en la prueba.
+5. Chi-cuadrado coincidente con SciPy.
+6. Grados de libertad correctos.
+7. P-valor entre 0 y 1.
+8. Frecuencias esperadas con la misma dimensión que la tabla efectiva.
+9. Suma de frecuencias esperadas igual al total observado.
+10. Estadístico no negativo.
+11. El p-valor no depende de α.
+12. Manejo de una categoría válida ausente.
+13. Error comprensible cuando solo existe una categoría observada en una variable.
+14. Porcentajes por sucursal suman aproximadamente 100 %.
+15. Los cálculos funcionan con el Excel predeterminado.
+16. La página no contiene frases de conclusión inferencial prohibidas.
+
+No crees tests frágiles basados en elementos visuales internos de Streamlit.
+
+Prueba las transformaciones de datos que alimentan los gráficos mediante funciones puras.
+
+## Documentación
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+Conserva P-00, P-01, P-02 y P-03.
+
+Agrega P-04 con:
+
+* prompt completo;
+* archivos modificados;
+* decisiones estadísticas;
+* validaciones;
+* problemas;
+* resultado;
+* commit propuesto.
+
+Documenta explícitamente:
+
+* diferencia entre descripción muestral e inferencia poblacional;
+* por qué la Página 1 no contiene una conclusión;
+* que el p-valor no cambia con α;
+* que los marginales se muestran, pero no forman parte del cálculo de Chi-cuadrado;
+* que la prueba utiliza `correction=False`.
+
+## Validaciones finales
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Inicia Streamlit temporalmente y verifica que no haya errores:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+Detén el proceso después de comprobarlo.
+
+Ejecuta también:
+
+```powershell
+git diff --check
+git status --short
+```
+
+## Informe final
+
+Reporta:
+
+1. Plan aplicado.
+2. Archivos creados.
+3. Archivos modificados.
+4. Funciones estadísticas implementadas.
+5. Estadístico Chi-cuadrado del Excel predeterminado.
+6. Grados de libertad.
+7. P-valor.
+8. Tabla de contingencia.
+9. Resultado de los porcentajes del gráfico al 100 %.
+10. Total de pruebas aprobadas.
+11. Resultado de Streamlit.
+12. Confirmación de que no existen conclusiones inferenciales en Página 1.
+13. Estado de Git.
+14. Mensaje de commit propuesto.
+
+No realices commit, push, merge ni Pull Request.
+
+Detente y espera mi revisión.
+````
+
+### Archivos modificados
+
+- `README.md`
+- `docs/decisiones_metodologicas.md`
+- `docs/prompts.md`
+- `docs/registro_pruebas.md`
+- `pages/1_Perfil_Gerencial.py`
+- `src/analisis_cualitativo.py`
+- `tests/test_analisis_cualitativo.py`
+
+### Decisiones estadísticas
+
+- La Página 1 se mantiene descriptiva y muestral.
+- Se usa `scipy.stats.chi2_contingency` con `correction=False`.
+- Los marginales se muestran en la tabla visual, pero no se envían al cálculo.
+- Las categorías válidas ausentes se conservan con cero en la tabla descriptiva
+  y se eliminan solo de la tabla efectiva cuando su total marginal es cero.
+- El p-valor se calcula con los datos y no cambia con el nivel de significancia.
+
+### Resultado
+
+Se implementó el módulo cualitativo gerencial con tabla de contingencia,
+marginales, gráficos Plotly, métricas muestrales y comparación neutral con α.
+
+### Problemas encontrados
+
+No se encontraron bloqueos. La página evita frases de conclusión inferencial
+prohibidas y muestra una aclaración de que la conclusión formal corresponde a la
+Página 2.
+
+### Corrección posterior a la revisión manual
+
+- Se observó que la interfaz mostraba solamente las filas visibles de la vista
+  previa y podía dar la impresión de que el análisis utilizaba solo nueve o diez
+  registros.
+- Se verificó que los cálculos estadísticos sí utilizaban las 48 observaciones
+  completas.
+- Se modificó `src/interfaz_carga.py` para mostrar el texto dinámico
+  `Vista previa: 10 de 48 registros`.
+- Se agregó un expander `Ver base completa (48 registros)`.
+- `datos.head()` se utiliza únicamente para la vista previa.
+- `st.session_state["datos_activos"]` conserva el DataFrame completo.
+- Las pruebas automatizadas continuaron aprobándose: 71 pruebas.
+- La aplicación inició correctamente en Streamlit.
+- La revisión visual confirmó que la tabla de contingencia continúa sumando 48
+  observaciones.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- Inicio temporal de Streamlit en `http://127.0.0.1:8765`
+- `git diff --check`
+- `git status --short`
+
+### Commit propuesto
+
+```text
+feat: agregar modulo cualitativo gerencial
 ```
 
 ## Plantilla para próximos registros
