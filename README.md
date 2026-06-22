@@ -71,3 +71,22 @@ Incluye:
 
 La página no presenta una conclusión inferencial. La decisión formal sobre la
 población se reserva para la Página 2.
+
+## Página gerencial: análisis cuantitativo
+
+La Página 1 también incorpora un módulo descriptivo y muestral para analizar la
+relación observada entre `Antiguedad_Bateria_Meses` y `Autonomia_Real_Km`.
+
+Incluye:
+
+- gráfico de dispersión interactivo con un punto por monopatín;
+- recta de regresión lineal muestral global;
+- ecuación de la recta con autonomía en kilómetros y antigüedad en meses;
+- coeficiente de correlación de Pearson;
+- coeficiente de determinación R²;
+- interpretación descriptiva de la dirección e intensidad observadas en la
+  muestra.
+
+La recta del gráfico y los KPI utilizan el mismo modelo ajustado. Esta página no
+presenta causalidad, intervalos, predicciones ni conclusiones sobre la
+población; esos elementos quedan reservados para la Página 2.

@@ -13,6 +13,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-02 | 2026-06-21 | Codex | Simulación de datos | Implementar un generador reproducible de datos semanales simulados y crear `data/volt_ar_semana_01.xlsx`. | Se implementó el simulador, la CLI, las validaciones técnicas, las pruebas automatizadas y el archivo Excel inicial. | Compilación Python correcta; `32 passed` con Pytest; CLI generó el Excel; métricas revisadas con Pandas; `git diff --check` sin errores. | Propuesto: `feat: agregar simulacion reproducible de datos semanales`. |
 | P-03 | 2026-06-21 | Codex | Carga y validación | Implementar carga dinámica de archivos semanales y validar su estructura antes de usarlos en el dashboard. | Se implementó carga de `.xlsx` y `.csv`, validación/normalización, componente Streamlit con `session_state` y pruebas automatizadas. | Compilación Python correcta; `55 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar carga y validacion de datos semanales`. |
 | P-04 | 2026-06-21 | Codex | Módulo cualitativo gerencial | Implementar el análisis cualitativo descriptivo y muestral de la Página 1. | Se implementó tabla de contingencia, marginales, gráficos, Chi-cuadrado muestral y métricas sin conclusión inferencial. | Compilación Python correcta; `71 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar modulo cualitativo gerencial`. |
+| P-05 | 2026-06-21 | Codex | Módulo cuantitativo gerencial | Implementar el análisis cuantitativo descriptivo y muestral de la Página 1. | Se implementó regresión lineal muestral, Pearson, R², recta de regresión, ecuación e interpretaciones descriptivas. | Compilación Python correcta; `102 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar modulo cuantitativo gerencial`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -1505,6 +1506,528 @@ Página 2.
 
 ```text
 feat: agregar modulo cualitativo gerencial
+```
+
+## P-05 — Módulo cuantitativo gerencial
+
+### Fecha
+
+2026-06-21.
+
+### Herramienta
+
+Codex.
+
+### Etapa
+
+Módulo cuantitativo descriptivo y muestral.
+
+### Objetivo
+
+Completar el módulo cuantitativo de la Página 1 para el perfil gerencial,
+usando `Antiguedad_Bateria_Meses` como variable independiente y
+`Autonomia_Real_Km` como variable dependiente, sin incorporar todavía
+conclusiones inferenciales ni diagnóstico visible de residuos.
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/modulo-cuantitativo-gerencial`.
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma la rama activa.
+3. Verifica que el árbol de trabajo esté limpio.
+4. Inspecciona:
+
+   * `src/analisis_cuantitativo.py`
+   * `src/config.py`
+   * `src/interfaz_carga.py`
+   * `pages/1_Perfil_Gerencial.py`
+   * los tests existentes;
+   * la documentación.
+5. Confirma que el módulo cualitativo P-04 esté presente.
+6. Presenta un plan breve.
+7. No realices commit, push, merge ni Pull Request.
+
+# Fase P-05: módulo cuantitativo descriptivo y muestral
+
+## Objetivo
+
+Completar el módulo cuantitativo de la Página 1 para el perfil gerencial.
+
+Las variables serán:
+
+* Variable independiente X: `Antiguedad_Bateria_Meses`.
+* Variable dependiente Y: `Autonomia_Real_Km`.
+
+La página debe presentar la relación observada en la muestra semanal mediante:
+
+* gráfico de dispersión;
+* recta de regresión muestral;
+* ecuación estimada;
+* coeficiente de correlación de Pearson;
+* coeficiente de determinación;
+* interpretación descriptiva dinámica.
+
+No debe incluir todavía:
+
+* prueba de hipótesis;
+* estadístico t;
+* grados de libertad inferenciales;
+* intervalos de confianza;
+* intervalos de predicción;
+* conclusión poblacional;
+* diagnóstico de residuos visible.
+
+Esos elementos corresponden a la Página 2.
+
+# Fuente de datos
+
+Utiliza:
+
+```python
+st.session_state["datos_activos"]
+```
+
+Reutiliza el mecanismo de P-03.
+
+No vuelvas a leer directamente el Excel desde esta página.
+
+Los resultados deben actualizarse automáticamente cuando cambie el archivo activo.
+
+# Lógica cuantitativa
+
+Completa `src/analisis_cuantitativo.py` con funciones puras, tipadas y documentadas.
+
+Implementa una estructura equivalente a:
+
+```python
+@dataclass(frozen=True)
+class ResultadoRegresionMuestral:
+    cantidad: int
+    intercepto: float
+    pendiente: float
+    coeficiente_pearson: float
+    coeficiente_determinacion: float
+    valores_ajustados: pandas.Series
+    residuos: pandas.Series
+```
+
+Implementa funcionalidad equivalente a:
+
+```python
+def ajustar_regresion_lineal(
+    datos: pandas.DataFrame,
+    columna_x: str = "Antiguedad_Bateria_Meses",
+    columna_y: str = "Autonomia_Real_Km",
+) -> ResultadoRegresionMuestral:
+    ...
+```
+
+```python
+def interpretar_correlacion_muestral(
+    coeficiente: float,
+) -> str:
+    ...
+```
+
+```python
+def interpretar_r_cuadrado_muestral(
+    coeficiente_determinacion: float,
+) -> str:
+    ...
+```
+
+```python
+def construir_datos_recta_regresion(
+    datos: pandas.DataFrame,
+    resultado: ResultadoRegresionMuestral,
+) -> pandas.DataFrame:
+    ...
+```
+
+Utiliza preferentemente `statsmodels` para ajustar el modelo, de manera que el resultado pueda reutilizarse posteriormente en la Página 2.
+
+Para Pearson, utiliza `scipy.stats.pearsonr` o una implementación equivalente validada.
+
+No dependas de una función automática de Plotly que calcule un modelo diferente al utilizado en las tarjetas.
+
+La recta mostrada debe usar exactamente el mismo intercepto y pendiente que el resultado estadístico.
+
+# Controles previos
+
+Antes del ajuste verifica:
+
+* al menos tres observaciones;
+* valores numéricos y finitos;
+* variabilidad en X;
+* variabilidad en Y;
+* ausencia de valores nulos.
+
+Si X o Y son constantes, devuelve un error comprensible para la interfaz.
+
+No permitas que Streamlit muestre una traza técnica completa.
+
+# Coeficiente de Pearson
+
+Debe cumplir:
+
+[
+-1\leq r\leq1
+]
+
+La interpretación debe ser descriptiva y referirse exclusivamente a la muestra.
+
+Utiliza una clasificación heurística documentada basada en (|r|):
+
+* menor que 0,20: muy débil;
+* desde 0,20 y menor que 0,40: débil;
+* desde 0,40 y menor que 0,60: moderada;
+* desde 0,60 y menor que 0,80: fuerte;
+* desde 0,80 hasta 1: muy fuerte.
+
+También debe indicarse el sentido:
+
+* positivo;
+* negativo;
+* sin dirección lineal apreciable cuando sea prácticamente cero.
+
+Ejemplo válido:
+
+> En la muestra semanal se observa una relación lineal negativa muy fuerte.
+
+No utilizar expresiones como:
+
+* “X causa Y”.
+* “La relación se cumple en toda la población”.
+* “Existe evidencia estadísticamente significativa”.
+
+La clasificación es una ayuda descriptiva y debe documentarse como criterio convencional, no como una ley universal.
+
+# Coeficiente de determinación
+
+En regresión lineal simple con intercepto debe coincidir aproximadamente con:
+
+[
+R^2=r^2
+]
+
+La interpretación dinámica debe seguir una forma como:
+
+> En la muestra, el modelo lineal con la antigüedad explica aproximadamente el 81,09 % de la variabilidad observada en la autonomía.
+
+Evita afirmar causalidad.
+
+Verifica que:
+
+[
+0\leq R^2\leq1
+]
+
+# Ecuación muestral
+
+Mostrar:
+
+[
+\widehat{Autonomia}=b_0+b_1\cdot Antiguedad
+]
+
+Formatea correctamente el signo de la pendiente.
+
+Por ejemplo:
+
+```text
+Autonomía estimada = 44,82 - 0,54 × Antigüedad
+```
+
+La ecuación debe indicar:
+
+* autonomía en kilómetros;
+* antigüedad en meses.
+
+# Página gerencial
+
+Conserva íntegro el módulo cualitativo P-04.
+
+Agrega debajo una sección:
+
+```text
+Análisis cuantitativo
+```
+
+Debe incluir:
+
+1. Explicación breve del enfoque muestral.
+2. Gráfico de dispersión interactivo.
+3. Recta de regresión superpuesta.
+4. Tarjeta KPI de Pearson.
+5. Tarjeta KPI de R².
+6. Tarjeta o bloque con la ecuación de regresión.
+7. Interpretación dinámica de Pearson.
+8. Interpretación dinámica de R².
+9. Aclaración de que la inferencia poblacional se realiza en la Página 2.
+
+# Gráfico de dispersión
+
+Utiliza Plotly.
+
+Requisitos:
+
+* Eje X: `Antiguedad_Bateria_Meses`.
+* Título del eje: “Antigüedad de la batería (meses)”.
+* Eje Y: `Autonomia_Real_Km`.
+* Título del eje: “Autonomía real (km)”.
+* Puntos correspondientes a cada monopatín.
+* Recta de regresión muestral.
+* Tooltip con:
+
+  * antigüedad;
+  * autonomía;
+  * sucursal;
+  * nivel de fallos.
+* Leyenda que diferencie observaciones y recta.
+* La línea debe construirse con valores X ordenados.
+* No conectar los puntos observados entre sí.
+* Los resultados deben cambiar cuando se cargue otro archivo válido.
+
+Puedes diferenciar visualmente por sucursal, siempre que la recta represente el modelo global de todas las observaciones.
+
+No agregues una regresión separada por sucursal.
+
+# Precisión visual
+
+Presenta:
+
+* Pearson con cuatro decimales.
+* R² con cuatro decimales y, en la interpretación, como porcentaje con dos decimales.
+* Pendiente e intercepto con una precisión razonable, por ejemplo cuatro decimales en la tarjeta y dos en la ecuación visible.
+
+No redondees los valores internamente antes de realizar cálculos.
+
+# Pruebas automatizadas
+
+Agrega o amplía pruebas para:
+
+1. Ajuste correcto con datos lineales conocidos.
+2. Pendiente positiva conocida.
+3. Pendiente negativa conocida.
+4. Intercepto correcto.
+5. Pearson dentro de [-1, 1].
+6. R² dentro de [0, 1].
+7. Correspondencia aproximada entre R² y (r^2).
+8. Valores ajustados con la misma cantidad de observaciones.
+9. Residuos con la misma cantidad de observaciones.
+10. Suma o media de residuos aproximadamente cero cuando existe intercepto.
+11. Construcción de la recta con X ordenado.
+12. La recta utiliza el mismo intercepto y pendiente del resultado.
+13. Error con X constante.
+14. Error con Y constante.
+15. Error con valores no finitos.
+16. Interpretación correcta del sentido negativo.
+17. Interpretación correcta del sentido positivo.
+18. Clasificación en cada rango de intensidad.
+19. Interpretación de R² expresada como porcentaje muestral.
+20. Resultados del Excel predeterminado:
+
+    * Pearson aproximadamente -0,900523;
+    * R² aproximadamente 0,810942.
+21. La página no contiene frases inferenciales prohibidas.
+22. El módulo cualitativo P-04 continúa presente.
+23. Los cálculos no dependen del redondeo visual.
+
+No pruebes detalles internos frágiles de widgets de Streamlit.
+
+# Documentación
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+Conserva íntegramente P-00 a P-04.
+
+Agrega P-05 con:
+
+* prompt completo;
+* archivos modificados;
+* funciones implementadas;
+* decisiones estadísticas;
+* resultados;
+* validaciones;
+* problemas encontrados;
+* correcciones humanas;
+* commit propuesto.
+
+Documenta:
+
+* elección de X e Y;
+* significado de pendiente e intercepto;
+* significado descriptivo de Pearson;
+* criterio heurístico de intensidad;
+* significado de R²;
+* diferencia entre asociación y causalidad;
+* diferencia entre análisis muestral e inferencia poblacional;
+* que el mismo modelo alimenta la recta y los KPI;
+* que los residuos se calculan internamente para reutilización posterior, pero todavía no se muestran.
+
+# Archivos esperados
+
+Los cambios deberían limitarse principalmente a:
+
+* `pages/1_Perfil_Gerencial.py`
+* `src/analisis_cuantitativo.py`
+* `tests/test_analisis_cuantitativo.py`
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+No modifiques el generador, la carga, la validación ni el módulo cualitativo salvo que detectes un error real.
+
+# Validaciones finales
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Inicia Streamlit temporalmente:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+Detén el proceso después de verificar el inicio.
+
+Ejecuta:
+
+```powershell
+git diff --check
+git status --short
+```
+
+Para el Excel predeterminado reporta:
+
+* cantidad de observaciones;
+* intercepto;
+* pendiente;
+* Pearson;
+* R²;
+* ecuación visible;
+* media de residuos;
+* interpretación dinámica de Pearson;
+* interpretación dinámica de R².
+
+# Informe final
+
+Informa:
+
+1. Plan aplicado.
+2. Archivos creados.
+3. Archivos modificados.
+4. Funciones implementadas.
+5. Resultado de la regresión predeterminada.
+6. Pearson y R².
+7. Interpretaciones generadas.
+8. Total de pruebas aprobadas.
+9. Resultado de Streamlit.
+10. Confirmación de que P-04 sigue funcionando.
+11. Confirmación de que no existen conclusiones inferenciales.
+12. Resultado de `git diff --check`.
+13. Estado de Git.
+14. Mensaje de commit propuesto.
+
+No realices commit, push, merge ni Pull Request.
+
+Detente y espera mi revisión.
+````
+
+### Archivos modificados
+
+- `README.md`
+- `docs/decisiones_metodologicas.md`
+- `docs/prompts.md`
+- `docs/registro_pruebas.md`
+- `pages/1_Perfil_Gerencial.py`
+- `src/analisis_cuantitativo.py`
+- `tests/test_analisis_cuantitativo.py`
+
+### Funciones implementadas
+
+- `ajustar_regresion_lineal`
+- `interpretar_correlacion_muestral`
+- `interpretar_r_cuadrado_muestral`
+- `construir_datos_recta_regresion`
+- `formatear_ecuacion_regresion`
+
+### Decisiones estadísticas
+
+- La Página 1 mantiene un enfoque descriptivo y muestral.
+- Se utiliza `statsmodels` para ajustar una regresión lineal simple con
+  intercepto.
+- Pearson se calcula con `scipy.stats.pearsonr`.
+- La recta visible se construye con el mismo intercepto y pendiente que alimentan
+  los indicadores.
+- Los residuos se calculan internamente, pero no se muestran en la interfaz
+  gerencial.
+- La interpretación de Pearson usa una clasificación heurística documentada y no
+  se presenta como regla universal.
+- No se incorporan hipótesis, intervalos, predicciones ni conclusiones
+  poblacionales en la Página 1.
+
+### Resultado
+
+Se implementó el módulo cuantitativo gerencial con gráfico de dispersión,
+recta de regresión muestral, ecuación visible, KPI de Pearson y R² e
+interpretaciones descriptivas dinámicas.
+
+Para el archivo predeterminado se obtuvo:
+
+- cantidad de observaciones: 48;
+- intercepto: 45.166071483068;
+- pendiente: -0.552768328535;
+- Pearson: -0.900523263956;
+- R²: 0.810942148925;
+- ecuación visible:
+  `Autonomía estimada (km) = 45.17 - 0.55 × Antigüedad (meses)`;
+- media de residuos: aproximadamente 0.
+
+### Problemas encontrados
+
+- El sandbox de Windows volvió a fallar al iniciar procesos con
+  `CreateProcessAsUserW failed: 1920`; las validaciones se ejecutaron con
+  permisos escalados cuando fue necesario.
+- La revisión automática de permisos tuvo respuestas intermitentes al lanzar
+  varios comandos en paralelo; se continuó con comandos individuales.
+- Una prueba nueva intentaba insertar texto en una columna `float64` antes de
+  llegar al validador. Se ajustó la prueba para convertir la columna a tipo
+  `object` y representar correctamente un archivo con valor no numérico.
+
+### Correcciones humanas
+
+No se registraron correcciones humanas durante la implementación de P-05.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- Inicio temporal de Streamlit en `http://127.0.0.1:8765`
+- `git diff --check`
+- `git status --short`
+
+### Commit propuesto
+
+```text
+feat: agregar modulo cuantitativo gerencial
 ```
 
 ## Plantilla para próximos registros
