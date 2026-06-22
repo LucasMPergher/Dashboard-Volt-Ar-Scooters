@@ -90,3 +90,22 @@ Incluye:
 La recta del gráfico y los KPI utilizan el mismo modelo ajustado. Esta página no
 presenta causalidad, intervalos, predicciones ni conclusiones sobre la
 población; esos elementos quedan reservados para la Página 2.
+
+## Página analista: inferencia cualitativa
+
+La Página 2 incorpora la prueba Chi-cuadrado de independencia para evaluar la
+asociación poblacional entre `Sucursal` y `Nivel_Fallos`.
+
+Incluye:
+
+- hipótesis nula y alternativa;
+- frecuencias observadas y esperadas;
+- diferencias relativas porcentuales con la convención `(O - E) / E * 100`;
+- aporte de cada celda al estadístico Chi-cuadrado;
+- estadístico Chi-cuadrado, grados de libertad y p-valor;
+- selector de nivel de significancia para actualizar la decisión;
+- conclusión contextual para el escenario poblacional simulado;
+- evaluación de supuestos y robustez de frecuencias esperadas.
+
+La inferencia cuantitativa, los intervalos, la predicción y los gráficos de
+residuos se incorporarán en fases posteriores.

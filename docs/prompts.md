@@ -14,6 +14,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-03 | 2026-06-21 | Codex | Carga y validación | Implementar carga dinámica de archivos semanales y validar su estructura antes de usarlos en el dashboard. | Se implementó carga de `.xlsx` y `.csv`, validación/normalización, componente Streamlit con `session_state` y pruebas automatizadas. | Compilación Python correcta; `55 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar carga y validacion de datos semanales`. |
 | P-04 | 2026-06-21 | Codex | Módulo cualitativo gerencial | Implementar el análisis cualitativo descriptivo y muestral de la Página 1. | Se implementó tabla de contingencia, marginales, gráficos, Chi-cuadrado muestral y métricas sin conclusión inferencial. | Compilación Python correcta; `71 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar modulo cualitativo gerencial`. |
 | P-05 | 2026-06-21 | Codex | Módulo cuantitativo gerencial | Implementar el análisis cuantitativo descriptivo y muestral de la Página 1. | Se implementó regresión lineal muestral, Pearson, R², recta de regresión, ecuación e interpretaciones descriptivas. | Compilación Python correcta; `102 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar modulo cuantitativo gerencial`. |
+| P-06 | 2026-06-21 | Codex | Inferencia cualitativa | Implementar la prueba Chi-cuadrado de independencia en la Página 2. | Se implementaron hipótesis, frecuencias esperadas, diferencias relativas, aportes por celda, decisión, conclusión y robustez. | Compilación Python correcta; `127 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar inferencia cualitativa`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -2028,6 +2029,632 @@ No se registraron correcciones humanas durante la implementación de P-05.
 
 ```text
 feat: agregar modulo cuantitativo gerencial
+```
+
+## P-06 — Inferencia cualitativa
+
+### Fecha
+
+2026-06-21.
+
+### Herramienta
+
+Codex.
+
+### Etapa
+
+Inferencia cualitativa y prueba de independencia.
+
+### Objetivo
+
+Implementar en la Página 2 el análisis inferencial de `Sucursal` y
+`Nivel_Fallos` mediante una prueba Chi-cuadrado de independencia, incluyendo
+hipótesis, decisión, conclusión contextual, frecuencias esperadas, diferencias
+relativas, aportes por celda y evaluación de robustez.
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/inferencia-cualitativa`.
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma la rama activa.
+3. Verifica que el árbol de trabajo esté limpio.
+4. Inspecciona:
+
+   * `src/analisis_cualitativo.py`
+   * `src/interfaz_carga.py`
+   * `pages/2_Perfil_Analista.py`
+   * `pages/1_Perfil_Gerencial.py`
+   * los tests existentes;
+   * la documentación.
+5. Confirma que P-04 y P-05 estén presentes.
+6. Presenta un plan breve.
+7. No realices commit, push, merge ni Pull Request.
+
+# Fase P-06: inferencia cualitativa y prueba de independencia
+
+## Objetivo
+
+Implementar en la Página 2 el análisis inferencial de las variables:
+
+* `Sucursal`
+* `Nivel_Fallos`
+
+Se aplicará una prueba Chi-cuadrado de independencia para evaluar si la relación observada en la muestra proporciona evidencia de asociación a nivel poblacional.
+
+Esta fase debe incluir:
+
+* hipótesis;
+* frecuencias observadas;
+* frecuencias esperadas;
+* diferencias relativas;
+* estadístico Chi-cuadrado;
+* grados de libertad;
+* p-valor;
+* nivel de significancia;
+* decisión;
+* conclusión contextual;
+* evaluación de supuestos;
+* evaluación de robustez.
+
+No implementes todavía la inferencia cuantitativa, los intervalos, la predicción ni los gráficos de residuos.
+
+# Fuente de datos
+
+Utiliza el DataFrame activo:
+
+```python
+st.session_state["datos_activos"]
+```
+
+Reutiliza `mostrar_carga_datos()` o la función correspondiente de `src/interfaz_carga.py`.
+
+No leas directamente el Excel desde la página.
+
+La página debe funcionar aunque el usuario acceda directamente a ella.
+
+# Tipo de prueba
+
+Utiliza una prueba Chi-cuadrado de independencia porque:
+
+* existe una sola muestra semanal de monopatines;
+* se observan conjuntamente dos variables cualitativas sobre cada unidad;
+* se desea evaluar si ambas variables están asociadas.
+
+Hipótesis:
+
+```text
+H₀: La sucursal y el nivel de fallos técnicos son independientes en la población de monopatines de Volt-Ar Scooters.
+
+H₁: La sucursal y el nivel de fallos técnicos no son independientes; existe asociación entre ambas variables en la población.
+```
+
+Utiliza:
+
+```python
+scipy.stats.chi2_contingency(
+    tabla_observada,
+    correction=False,
+)
+```
+
+Los marginales no deben incluirse en la prueba.
+
+# Reutilización de P-04
+
+Reutiliza las funciones existentes siempre que sean apropiadas:
+
+* `construir_tabla_contingencia`
+* `calcular_chi_cuadrado_muestral`
+
+No dupliques cálculos.
+
+Puedes ampliar la estructura de resultado o crear una nueva estructura inferencial si mejora la separación de responsabilidades, pero no rompas la Página 1.
+
+# Frecuencias esperadas
+
+Implementa una función equivalente a:
+
+```python
+def construir_tabla_frecuencias_esperadas(
+    tabla_observada: pandas.DataFrame,
+) -> pandas.DataFrame:
+    ...
+```
+
+También verifica mediante pruebas la fórmula:
+
+[
+E_{ij}=
+\frac{
+(\text{total fila }i)
+(\text{total columna }j)
+}{
+N
+}
+]
+
+La tabla esperada debe mantener las mismas etiquetas y el mismo orden que la tabla observada efectiva.
+
+No agregues marginales a la tabla esperada salvo como visualización separada, porque no forman parte de las celdas de la prueba.
+
+# Frecuencias diferenciales relativas
+
+La consigna utiliza la expresión “frecuencias diferenciales relativas”, pero el material disponible no incorpora una definición operacional explícita.
+
+Utiliza como convención documentada:
+
+[
+D_{ij}=
+\frac{O_{ij}-E_{ij}}{E_{ij}}
+]
+
+Para la interfaz, expresa el resultado como porcentaje:
+
+[
+D_{ij}%=
+\frac{O_{ij}-E_{ij}}{E_{ij}}\times100
+]
+
+Implementa una función equivalente a:
+
+```python
+def calcular_diferencias_relativas(
+    observadas: pandas.DataFrame,
+    esperadas: pandas.DataFrame,
+) -> pandas.DataFrame:
+    ...
+```
+
+Interpretación técnica:
+
+* valor positivo: frecuencia observada superior a la esperada bajo independencia;
+* valor negativo: frecuencia observada inferior a la esperada;
+* valor cercano a cero: frecuencia observada próxima a la esperada.
+
+No interpretes una celda aislada como prueba suficiente de asociación.
+
+Documenta expresamente que esta es la convención adoptada por el proyecto y que debe validarse con el criterio del docente si utiliza otra definición.
+
+# Aporte de cada celda
+
+Como complemento técnico, implementa internamente:
+
+[
+C_{ij}=
+\frac{(O_{ij}-E_{ij})^2}{E_{ij}}
+]
+
+La suma de los aportes debe coincidir con el estadístico Chi-cuadrado.
+
+Puedes mostrar esta tabla dentro de un `st.expander` titulado:
+
+```text
+Ver aporte de cada celda al estadístico Chi-cuadrado
+```
+
+No confundas esta tabla con las diferencias relativas.
+
+# Nivel de significancia
+
+Agrega un deslizador en la Página 2:
+
+* mínimo: 0.01;
+* máximo: 0.10;
+* valor inicial: 0.05;
+* paso: 0.01;
+* clave única de Streamlit.
+
+El p-valor no debe cambiar con α.
+
+La decisión sí debe actualizarse dinámicamente.
+
+# Regla de decisión
+
+Implementa:
+
+```text
+Si p-valor < α: se rechaza H₀.
+Si p-valor ≥ α: no se rechaza H₀.
+```
+
+No utilizar “se acepta H₀”.
+
+# Conclusión contextual dinámica
+
+Cuando `p < α`, generar una conclusión equivalente a:
+
+> Con un nivel de significancia de α, se rechaza la hipótesis nula. En el escenario analizado existe evidencia estadísticamente significativa de asociación entre la sucursal y el nivel de fallos técnicos en la población de monopatines de Volt-Ar Scooters.
+
+Cuando `p ≥ α`, generar:
+
+> Con un nivel de significancia de α, no se rechaza la hipótesis nula. Los datos disponibles no proporcionan evidencia estadística suficiente para afirmar que existe asociación entre la sucursal y el nivel de fallos técnicos en la población.
+
+No afirmar categóricamente que las variables “son independientes” cuando no se rechaza H₀.
+
+Como los datos son simulados, incluye una aclaración breve:
+
+> La conclusión corresponde al escenario poblacional simulado con fines académicos.
+
+# Supuestos y robustez
+
+Evalúa dinámicamente:
+
+## 1. Independencia de las observaciones
+
+Este supuesto no puede verificarse únicamente a partir de la matriz.
+
+Mostrar:
+
+> Se asume que cada fila corresponde a un monopatín distinto y que cada observación es independiente. Este supuesto depende del diseño de recolección.
+
+No marcarlo automáticamente como comprobado por una fórmula.
+
+## 2. Categorías mutuamente excluyentes
+
+Puede considerarse respaldado por la estructura validada:
+
+* cada monopatín pertenece a una sola sucursal;
+* cada monopatín posee un único nivel de fallos.
+
+## 3. Frecuencias esperadas
+
+Evaluar:
+
+* ninguna frecuencia esperada menor que 1;
+* al menos el 80 % de las celdas con frecuencia esperada mayor o igual que 5;
+* porcentaje de celdas entre 1 y menos de 5;
+* cantidad de celdas menores que 1.
+
+Crear una estructura equivalente a:
+
+```python
+@dataclass(frozen=True)
+class EvaluacionRobustezChiCuadrado:
+    frecuencia_esperada_minima: float
+    cantidad_menores_que_uno: int
+    cantidad_menores_que_cinco: int
+    porcentaje_mayores_o_iguales_a_cinco: float
+    cumple_minimo_absoluto: bool
+    cumple_regla_ochenta_por_ciento: bool
+    es_robusta: bool
+```
+
+La prueba se considerará robusta solamente si:
+
+```text
+ninguna esperada < 1
+y
+al menos 80 % de esperadas ≥ 5
+```
+
+Si no se cumple, no bloquees el cálculo, pero muestra una advertencia indicando que la aproximación Chi-cuadrado debe interpretarse con precaución.
+
+No agrupes categorías automáticamente.
+
+Puede sugerirse:
+
+* revisar si una combinación de categorías es metodológicamente válida;
+* utilizar una prueba exacta apropiada;
+* reportar el incumplimiento con cautela.
+
+# Manejo de categorías ausentes
+
+Reutiliza el criterio de P-04:
+
+* elimina para el cálculo filas o columnas cuyo total observado sea cero;
+* exige al menos dos categorías observadas en cada variable;
+* conserva las categorías válidas cuando se muestren descripciones;
+* informa qué categorías fueron excluidas del cálculo por no estar presentes.
+
+No inventes frecuencias.
+
+# Página 2
+
+Completa `pages/2_Perfil_Analista.py`.
+
+Debe contener:
+
+1. Título “Perfil analista”.
+2. Identificación del archivo activo.
+3. Explicación del enfoque poblacional.
+4. Sección “Inferencia cualitativa”.
+5. Hipótesis H₀ y H₁.
+6. Tabla de frecuencias observadas.
+7. Tabla de frecuencias esperadas.
+8. Tabla de diferencias relativas porcentuales.
+9. Tarjetas:
+
+   * Chi-cuadrado;
+   * grados de libertad;
+   * p-valor;
+   * α.
+10. Deslizador de α.
+11. Decisión.
+12. Conclusión contextual.
+13. Evaluación de supuestos.
+14. Indicador de robustez.
+15. Expander opcional con aportes por celda.
+16. Aclaración de que la inferencia cuantitativa se incorporará en la siguiente fase.
+
+Las tablas deben tener títulos y una explicación breve.
+
+No presentes la Página 2 como gerencial; debe ser técnica pero comprensible.
+
+# Resultado predeterminado esperado
+
+Con el Excel predeterminado:
+
+Tabla observada:
+
+```text
+             Bajo  Medio  Alto
+Rosario         3      9    12
+Córdoba        14     10     0
+```
+
+Tabla esperada:
+
+```text
+             Bajo  Medio  Alto
+Rosario       8.5    9.5    6.0
+Córdoba       8.5    9.5    6.0
+```
+
+Diferencias relativas porcentuales aproximadas:
+
+```text
+Rosario:
+Bajo   -64.71 %
+Medio   -5.26 %
+Alto   100.00 %
+
+Córdoba:
+Bajo    64.71 %
+Medio    5.26 %
+Alto  -100.00 %
+```
+
+Resultados:
+
+* Chi-cuadrado ≈ 19.170279
+* grados de libertad = 2
+* p-valor ≈ 0.000069
+* mínima esperada = 6
+* esperadas ≥ 5 = 100 %
+* prueba robusta = sí
+
+Para α = 0.05 debe rechazarse H₀.
+
+# Pruebas automatizadas
+
+Agrega pruebas para:
+
+1. Cálculo correcto de frecuencias esperadas.
+2. Fórmula manual de una celda esperada.
+3. Conservación de etiquetas y orden.
+4. Igualdad de suma entre observadas y esperadas.
+5. Cálculo correcto de diferencias relativas.
+6. Signo positivo cuando O > E.
+7. Signo negativo cuando O < E.
+8. Cero cuando O = E.
+9. Cálculo correcto de aportes por celda.
+10. Suma de aportes igual al Chi-cuadrado.
+11. Evaluación de robustez completamente cumplida.
+12. Incumplimiento por frecuencia esperada menor que 1.
+13. Incumplimiento de la regla del 80 %.
+14. P-valor independiente de α.
+15. Decisión de rechazo cuando `p < α`.
+16. Decisión de no rechazo cuando `p ≥ α`.
+17. No utilizar la expresión “aceptar H₀”.
+18. Conclusión de rechazo contextualizada.
+19. Conclusión de no rechazo sin afirmar independencia definitiva.
+20. Resultado predeterminado esperado.
+21. Manejo de categoría ausente.
+22. Error cuando queda una sola categoría por variable.
+23. La Página 2 contiene H₀ y H₁.
+24. La Página 2 muestra la advertencia de independencia como supuesto de diseño.
+25. P-04 y P-05 permanecen sin cambios funcionales.
+
+No pruebes detalles internos frágiles de widgets.
+
+# Documentación
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+Conserva P-00 a P-05.
+
+Agrega P-06 con:
+
+* prompt completo;
+* archivos modificados;
+* funciones implementadas;
+* fórmula de frecuencias esperadas;
+* convención adoptada para diferencias relativas;
+* criterios de robustez;
+* conclusiones dinámicas;
+* validaciones;
+* problemas y decisiones humanas;
+* commit propuesto.
+
+Documenta que la expresión “frecuencias diferenciales relativas” fue operacionalizada como `(O-E)/E`, dado que el material disponible no presenta una definición explícita con ese nombre.
+
+# Archivos esperados
+
+Los cambios deberían concentrarse en:
+
+* `pages/2_Perfil_Analista.py`
+* `src/analisis_cualitativo.py`
+* `tests/test_analisis_cualitativo.py`
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+No modifiques P-05 ni los módulos de carga o simulación salvo error real.
+
+# Validaciones finales
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Inicia Streamlit temporalmente:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+Detén el proceso después de verificar el inicio.
+
+Ejecuta:
+
+```powershell
+git diff --check
+git status --short
+```
+
+Reporta para el Excel predeterminado:
+
+* observadas;
+* esperadas;
+* diferencias relativas;
+* aportes por celda;
+* Chi-cuadrado;
+* grados de libertad;
+* p-valor;
+* evaluación de robustez;
+* decisión con α = 0.05;
+* conclusión generada.
+
+# Informe final
+
+Informa:
+
+1. Plan aplicado.
+2. Archivos creados.
+3. Archivos modificados.
+4. Funciones implementadas.
+5. Resultados predeterminados.
+6. Criterios de robustez.
+7. Resultado total de pruebas.
+8. Resultado de Streamlit.
+9. Confirmación de que P-04 y P-05 siguen funcionando.
+10. Resultado de `git diff --check`.
+11. Estado de Git.
+12. Mensaje de commit propuesto.
+
+No realices commit, push, merge ni Pull Request.
+
+Detente y espera mi revisión.
+````
+
+### Archivos modificados
+
+- `README.md`
+- `docs/decisiones_metodologicas.md`
+- `docs/prompts.md`
+- `docs/registro_pruebas.md`
+- `pages/2_Perfil_Analista.py`
+- `src/analisis_cualitativo.py`
+- `tests/test_analisis_cualitativo.py`
+
+### Funciones implementadas
+
+- `construir_tabla_frecuencias_esperadas`
+- `calcular_diferencias_relativas`
+- `calcular_aportes_chi_cuadrado`
+- `evaluar_robustez_chi_cuadrado`
+- `decidir_chi_cuadrado`
+- `concluir_chi_cuadrado`
+- `identificar_categorias_excluidas`
+
+### Fórmula de frecuencias esperadas
+
+Se implementó `Eij = total_fila_i * total_columna_j / N`, conservando las
+etiquetas y el orden de la tabla observada efectiva.
+
+### Convención para diferencias relativas
+
+La expresión "frecuencias diferenciales relativas" fue operacionalizada como
+`(O - E) / E`. En la interfaz se expresa como porcentaje mediante
+`(O - E) / E * 100`, porque el material disponible no presentaba una definición
+explícita con ese nombre.
+
+### Criterios de robustez
+
+La prueba se considera robusta solamente cuando no existe ninguna frecuencia
+esperada menor que 1 y al menos el 80 % de las frecuencias esperadas es mayor o
+igual que 5.
+
+### Conclusiones dinámicas
+
+- Si `p-valor < α`, se rechaza H0 y se informa evidencia estadísticamente
+  significativa de asociación en el escenario poblacional simulado.
+- Si `p-valor >= α`, no se rechaza H0 y se evita afirmar independencia
+  definitiva.
+- El p-valor no cambia cuando se modifica α; solo cambia la decisión.
+
+### Resultado
+
+Para el Excel predeterminado:
+
+- tabla observada: Rosario `[3, 9, 12]`; Córdoba `[14, 10, 0]`;
+- tabla esperada: Rosario `[8.5, 9.5, 6.0]`; Córdoba `[8.5, 9.5, 6.0]`;
+- diferencias relativas porcentuales: Rosario `[-64.71, -5.26, 100.00]`;
+  Córdoba `[64.71, 5.26, -100.00]`;
+- Chi-cuadrado: 19.170278637771;
+- grados de libertad: 2;
+- p-valor: 0.000068742747;
+- mínima esperada: 6.0;
+- esperadas >= 5: 100 %;
+- prueba robusta: sí;
+- con α = 0.05 se rechaza H0.
+
+### Problemas encontrados
+
+- Al imprimir la decisión con `H₀` desde PowerShell apareció un
+  `UnicodeEncodeError` por la codificación CP1252 de la consola. Se reejecutó el
+  cálculo con `PYTHONIOENCODING=utf-8`.
+- Una prueba del resultado predeterminado falló inicialmente porque el fixture
+  esperado no incluía los nombres de índice y columnas (`Sucursal` y
+  `Nivel_Fallos`); se corrigió el fixture.
+- La comparación inicial del p-valor usaba el redondeo `0.000069` con una
+  tolerancia demasiado estricta; se ajustó al valor real de SciPy
+  `0.00006874274743165537`.
+
+### Decisiones humanas
+
+No se registraron correcciones humanas durante la implementación de P-06. La
+definición de diferencias relativas queda documentada para validación posterior
+con el criterio docente si fuera necesario.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- Inicio temporal de Streamlit en `http://127.0.0.1:8765`
+- `git diff --check`
+- `git status --short`
+
+### Commit propuesto
+
+```text
+feat: agregar inferencia cualitativa
 ```
 
 ## Plantilla para próximos registros
