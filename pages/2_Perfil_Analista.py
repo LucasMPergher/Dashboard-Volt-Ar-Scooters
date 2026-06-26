@@ -1,6 +1,7 @@
 """Página analista del dashboard."""
 
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 from src.analisis_cualitativo import (
@@ -19,10 +20,20 @@ from src.analisis_cualitativo import (
 from src.analisis_cuantitativo import (
     ErrorAnalisisCuantitativo,
     ajustar_inferencia_regresion,
+    calcular_ancho_intervalo,
+    calcular_prediccion,
     concluir_prueba_pendiente,
+    construir_bandas_prediccion,
     decidir_prueba_pendiente,
 )
-from src.config import VARIABLE_ANTIGUEDAD_BATERIA, VARIABLE_AUTONOMIA_REAL
+from src.config import (
+    ANTIGUEDAD_MAXIMA_MESES,
+    ANTIGUEDAD_MINIMA_MESES,
+    AUTONOMIA_MAXIMA_KM,
+    AUTONOMIA_MINIMA_KM,
+    VARIABLE_ANTIGUEDAD_BATERIA,
+    VARIABLE_AUTONOMIA_REAL,
+)
 from src.interfaz_carga import (
     CLAVE_NOMBRE_ARCHIVO_ACTIVO,
     mostrar_carga_datos,
@@ -51,8 +62,8 @@ st.write(
     "relación poblacional entre la sucursal y el nivel de fallos técnicos."
 )
 st.info(
-    "La inferencia cuantitativa se presenta más abajo. Las herramientas para "
-    "uso predictivo y los diagnósticos del modelo se incorporarán en una fase "
+    "La inferencia cuantitativa y la calculadora de predicción se presentan "
+    "más abajo. Los diagnósticos del modelo se incorporarán en una fase "
     "posterior."
 )
 
@@ -355,6 +366,191 @@ else:
         )
 
     st.info(
-        "Las herramientas para uso predictivo y los diagnósticos del modelo se "
-        "incorporarán en fases posteriores."
+        "Los diagnósticos del modelo se incorporarán en fases posteriores."
     )
+
+    st.header("Calculadora de predicción")
+    st.write(
+        "Esta herramienta estima la autonomía para una antigüedad de batería "
+        "ingresada por el analista usando el mismo modelo lineal ajustado."
+    )
+    valor_x_prediccion = st.number_input(
+        "Antigüedad de la batería (meses)",
+        min_value=ANTIGUEDAD_MINIMA_MESES,
+        max_value=ANTIGUEDAD_MAXIMA_MESES,
+        value=24,
+        step=1,
+        key="valor_x_calculadora_prediccion",
+    )
+
+    try:
+        prediccion = calcular_prediccion(
+            datos_activos,
+            valor_x=float(valor_x_prediccion),
+            nivel_confianza=nivel_confianza,
+        )
+        bandas_prediccion = construir_bandas_prediccion(
+            datos_activos,
+            nivel_confianza=nivel_confianza,
+        )
+    except ErrorAnalisisCuantitativo as error:
+        st.warning(str(error))
+    else:
+        st.caption(
+            f"Nivel de confianza utilizado: {nivel_confianza_porcentaje} %. "
+            f"Rango observado de X: {prediccion.minimo_x_observado:.0f} a "
+            f"{prediccion.maximo_x_observado:.0f} meses."
+        )
+
+        if prediccion.es_extrapolacion:
+            st.warning(
+                "El valor ingresado se encuentra fuera del rango observado en "
+                "la muestra. La estimación constituye una extrapolación y debe "
+                "interpretarse con mayor precaución."
+            )
+
+        ancho_media = calcular_ancho_intervalo(
+            prediccion.limite_inferior_media,
+            prediccion.limite_superior_media,
+        )
+        ancho_individual = calcular_ancho_intervalo(
+            prediccion.limite_inferior_individual,
+            prediccion.limite_superior_individual,
+        )
+
+        columna_1, columna_2, columna_3 = st.columns(3)
+        columna_1.metric(
+            "Predicción puntual",
+            f"{prediccion.prediccion_puntual:.2f} km",
+        )
+        columna_2.metric(
+            "Ancho IC media",
+            f"{ancho_media:.2f} km",
+        )
+        columna_3.metric(
+            "Ancho intervalo individual",
+            f"{ancho_individual:.2f} km",
+        )
+
+        st.subheader("Intervalos de predicción")
+        intervalos_prediccion = pd.DataFrame(
+            [
+                {
+                    "Intervalo": "Media esperada",
+                    "Límite inferior": prediccion.limite_inferior_media,
+                    "Predicción": prediccion.prediccion_puntual,
+                    "Límite superior": prediccion.limite_superior_media,
+                    "Confianza": f"{nivel_confianza_porcentaje} %",
+                },
+                {
+                    "Intervalo": "Observación individual",
+                    "Límite inferior": prediccion.limite_inferior_individual,
+                    "Predicción": prediccion.prediccion_puntual,
+                    "Límite superior": prediccion.limite_superior_individual,
+                    "Confianza": f"{nivel_confianza_porcentaje} %",
+                },
+            ]
+        )
+        st.dataframe(
+            intervalos_prediccion,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        st.write(
+            "El intervalo de confianza para la media esperada describe la "
+            "autonomía promedio esperada de todos los monopatines con "
+            f"{prediccion.valor_x:.0f} meses de antigüedad."
+        )
+        st.write(
+            "El intervalo de predicción individual describe la autonomía de un "
+            "monopatín individual con esa antigüedad. Es más amplio porque "
+            "incorpora incertidumbre sobre la media estimada y variabilidad "
+            "individual alrededor de la recta."
+        )
+
+        limites_intervalos = [
+            prediccion.limite_inferior_media,
+            prediccion.limite_superior_media,
+            prediccion.limite_inferior_individual,
+            prediccion.limite_superior_individual,
+        ]
+        excede_rango_operativo = (
+            min(limites_intervalos) < AUTONOMIA_MINIMA_KM
+            or max(limites_intervalos) > AUTONOMIA_MAXIMA_KM
+        )
+        if excede_rango_operativo:
+            st.info(
+                "El intervalo estadístico excede el rango operativo utilizado "
+                "en la simulación; se presenta sin recorte para conservar el "
+                "resultado del modelo."
+            )
+
+        figura_prediccion = go.Figure()
+        figura_prediccion.add_trace(
+            go.Scatter(
+                x=bandas_prediccion[VARIABLE_ANTIGUEDAD_BATERIA],
+                y=bandas_prediccion["individual_superior"],
+                mode="lines",
+                line={"width": 0},
+                name="Límite superior individual",
+                showlegend=False,
+            )
+        )
+        figura_prediccion.add_trace(
+            go.Scatter(
+                x=bandas_prediccion[VARIABLE_ANTIGUEDAD_BATERIA],
+                y=bandas_prediccion["individual_inferior"],
+                mode="lines",
+                fill="tonexty",
+                fillcolor="rgba(148, 163, 184, 0.22)",
+                line={"width": 0},
+                name="Intervalo individual",
+            )
+        )
+        figura_prediccion.add_trace(
+            go.Scatter(
+                x=bandas_prediccion[VARIABLE_ANTIGUEDAD_BATERIA],
+                y=bandas_prediccion["media_superior"],
+                mode="lines",
+                line={"width": 0},
+                name="Límite superior media",
+                showlegend=False,
+            )
+        )
+        figura_prediccion.add_trace(
+            go.Scatter(
+                x=bandas_prediccion[VARIABLE_ANTIGUEDAD_BATERIA],
+                y=bandas_prediccion["media_inferior"],
+                mode="lines",
+                fill="tonexty",
+                fillcolor="rgba(37, 99, 235, 0.24)",
+                line={"width": 0},
+                name="IC media esperada",
+            )
+        )
+        figura_prediccion.add_trace(
+            go.Scatter(
+                x=bandas_prediccion[VARIABLE_ANTIGUEDAD_BATERIA],
+                y=bandas_prediccion["prediccion_puntual"],
+                mode="lines",
+                line={"color": "#111827", "width": 3},
+                name="Recta del modelo",
+            )
+        )
+        figura_prediccion.add_trace(
+            go.Scatter(
+                x=[prediccion.valor_x],
+                y=[prediccion.prediccion_puntual],
+                mode="markers",
+                marker={"color": "#dc2626", "size": 11},
+                name="Valor ingresado",
+            )
+        )
+        figura_prediccion.update_layout(
+            title="Predicción de autonomía según antigüedad",
+            xaxis_title="Antigüedad de la batería (meses)",
+            yaxis_title="Autonomía real estimada (km)",
+            legend_title_text="Referencia",
+        )
+        st.plotly_chart(figura_prediccion, use_container_width=True)

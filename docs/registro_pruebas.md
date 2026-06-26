@@ -163,6 +163,47 @@ Validación de sintaxis ejecutada:
 Sin errores.
 ```
 
+## Fase P-08: calculadora de predicción
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P08-T01 | Verificar predicción puntual. | Datos controlados. | `b0 + b1 * x0`. | Coincidencia. | Aprobada | Usa el mismo modelo OLS. |
+| P08-T02 | Comparar con `get_prediction`. | Datos controlados. | Coincidencia completa. | Coincidencia. | Aprobada | Statsmodels como referencia. |
+| P08-T03 | Asignar intervalo de media. | `summary_frame`. | Usa `mean_ci_lower` y `mean_ci_upper`. | Correcto. | Aprobada | Sin intercambio de columnas. |
+| P08-T04 | Asignar intervalo individual. | `summary_frame`. | Usa `obs_ci_lower` y `obs_ci_upper`. | Correcto. | Aprobada | Sin intercambio de columnas. |
+| P08-T05 | Comparar amplitudes. | Datos controlados. | Individual >= media. | Cumple. | Aprobada | Condición estadística. |
+| P08-T06 | Verificar predicción dentro del IC media. | Datos controlados. | Predicción contenida. | Contenida. | Aprobada | Control de consistencia. |
+| P08-T07 | Verificar predicción dentro del intervalo individual. | Datos controlados. | Predicción contenida. | Contenida. | Aprobada | Control de consistencia. |
+| P08-T08 | Ampliar intervalos con mayor confianza. | 90 % y 99 %. | Ambos se amplían. | Cumple. | Aprobada | Predicción no cambia. |
+| P08-T09 | Mantener predicción puntual. | 90 % y 99 %. | Misma predicción. | Coincidencia. | Aprobada | Solo cambian límites. |
+| P08-T10 | Detectar interpolación. | Valor dentro del rango observado. | `es_extrapolacion=False`. | Correcto. | Aprobada | Rango observado dinámico. |
+| P08-T11 | Detectar extrapolación inferior. | X = 1 con mínimo observado mayor. | Extrapolación. | Correcto. | Aprobada | No bloquea el cálculo. |
+| P08-T12 | Detectar extrapolación superior. | X = 48 con máximo observado menor. | Extrapolación. | Correcto. | Aprobada | No bloquea el cálculo. |
+| P08-T13 | Aceptar rango operativo. | X = 1 y X = 48. | Valores aceptados. | Aceptados. | Aprobada | Rango 1-48. |
+| P08-T14 | Rechazar valor menor que 1. | X = 0. | Error comprensible. | Error comprensible. | Aprobada | Control operativo. |
+| P08-T15 | Rechazar valor mayor que 48. | X = 49. | Error comprensible. | Error comprensible. | Aprobada | Control operativo. |
+| P08-T16 | Rechazar valor no finito. | X infinito. | Error comprensible. | Error comprensible. | Aprobada | Control numérico. |
+| P08-T17 | No recortar intervalos. | Excel predeterminado, X = 48. | Límite individual puede quedar bajo 15. | Se conserva sin recorte. | Aprobada | Respeta resultado del modelo. |
+| P08-T18 | Validar Excel predeterminado. | X = 24. | Predicción aproximada 31.90 km. | 31.899631598222 km. | Aprobada | Interpolación. |
+| P08-T19 | Confirmar P-06 y P-07 presentes. | `pages/2_Perfil_Analista.py`. | Secciones conservadas. | Conservadas. | Aprobada | No se eliminó inferencia. |
+| P08-T20 | Confirmar diagnósticos ausentes. | `pages/2_Perfil_Analista.py`. | Sin gráficos de diagnóstico. | Ausentes. | Aprobada | Fases posteriores. |
+| P08-T21 | Confirmar ausencia de lenguaje causal. | `pages/2_Perfil_Analista.py`. | Sin causalidad. | Sin causalidad. | Aprobada | Estimación, no causalidad. |
+| P08-T22 | Construir bandas para gráfico. | Datos controlados. | Columnas de recta, media e individual. | Correcto. | Aprobada | Mismo modelo y confianza. |
+
+Validación automatizada ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+175 passed
+```
+
+Validación de sintaxis ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+Sin errores.
+```
+
 ## Fase P-07: inferencia cuantitativa
 
 | Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
