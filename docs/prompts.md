@@ -15,6 +15,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-04 | 2026-06-21 | Codex | Módulo cualitativo gerencial | Implementar el análisis cualitativo descriptivo y muestral de la Página 1. | Se implementó tabla de contingencia, marginales, gráficos, Chi-cuadrado muestral y métricas sin conclusión inferencial. | Compilación Python correcta; `71 passed` con Pytest; Streamlit inició localmente; `git diff --check` sin errores. | Propuesto: `feat: agregar modulo cualitativo gerencial`. |
 | P-05 | 2026-06-21 | Codex | Módulo cuantitativo gerencial | Implementar el análisis cuantitativo descriptivo y muestral de la Página 1. | Se implementó regresión lineal muestral, Pearson, R², recta de regresión, ecuación e interpretaciones descriptivas. | Compilación Python correcta; `102 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar modulo cuantitativo gerencial`. |
 | P-06 | 2026-06-21 | Codex | Inferencia cualitativa | Implementar la prueba Chi-cuadrado de independencia en la Página 2. | Se implementaron hipótesis, frecuencias esperadas, diferencias relativas, aportes por celda, decisión, conclusión y robustez. | Compilación Python correcta; `127 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar inferencia cualitativa`. |
+| P-07 | 2026-06-26 | Codex | Inferencia cuantitativa | Implementar la prueba t bilateral para la pendiente poblacional y los intervalos de confianza en la Página 2. | Se implementaron inferencia de regresión, decisión, conclusión, IC para β₀/β₁ e intervalo de Fisher para ρ. | Compilación Python correcta; `154 passed` con Pytest. | Propuesto: `feat: agregar inferencia cuantitativa`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -2655,6 +2656,556 @@ con el criterio docente si fuera necesario.
 
 ```text
 feat: agregar inferencia cualitativa
+```
+
+## P-07 — Inferencia cuantitativa
+
+### Fecha
+
+2026-06-26.
+
+### Herramienta
+
+Codex.
+
+### Etapa
+
+Inferencia cuantitativa para regresión lineal.
+
+### Objetivo
+
+Implementar en la Página 2 la prueba bilateral para la pendiente poblacional de
+la regresión lineal entre `Antiguedad_Bateria_Meses` y `Autonomia_Real_Km`,
+junto con intervalos de confianza para `β₀`, `β₁` y `ρ`.
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/inferencia-cuantitativa`.
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma que la rama activa sea `feat/inferencia-cuantitativa`.
+3. Verifica que el árbol de trabajo esté limpio.
+4. Inspecciona:
+
+   * `src/analisis_cuantitativo.py`
+   * `pages/2_Perfil_Analista.py`
+   * `pages/1_Perfil_Gerencial.py`
+   * los tests existentes;
+   * la documentación.
+5. Confirma que P-06 esté presente en la Página 2.
+6. Presenta un plan breve.
+7. No realices commit, push, merge ni Pull Request.
+
+# Fase P-07: inferencia cuantitativa para la regresión lineal
+
+## Objetivo
+
+Implementar en la Página 2 la prueba de hipótesis para la pendiente poblacional de la regresión lineal entre:
+
+* X: `Antiguedad_Bateria_Meses`.
+* Y: `Autonomia_Real_Km`.
+
+También deben mostrarse intervalos de confianza dinámicos para los parámetros poblacionales.
+
+No implementes todavía:
+
+* calculadora de predicción;
+* intervalo para la media esperada de Y;
+* intervalo de predicción individual;
+* gráfico de residuos;
+* Q-Q Plot;
+* histograma de residuos.
+
+Estas funciones se incorporarán en fases posteriores.
+
+# Fuente de datos
+
+Utiliza el DataFrame activo almacenado en:
+
+`st.session_state["datos_activos"]`
+
+Reutiliza `mostrar_carga_datos()`.
+
+No vuelvas a leer directamente el Excel.
+
+Los resultados deben actualizarse automáticamente cuando cambien los datos activos.
+
+# Modelo
+
+Utiliza una regresión lineal simple con intercepto:
+
+[
+Y=\beta_0+\beta_1X+\varepsilon
+]
+
+Donde:
+
+* (\beta_0): ordenada al origen poblacional.
+* (\beta_1): pendiente poblacional.
+* (X): antigüedad de la batería en meses.
+* (Y): autonomía real en kilómetros.
+
+Utiliza `statsmodels.api.OLS` o reutiliza el ajuste existente de P-05, evitando ajustar modelos distintos para la Página 1 y la Página 2.
+
+No rompas la interfaz pública de las funciones utilizadas por P-05.
+
+# Prueba de hipótesis
+
+Implementa una prueba bilateral:
+
+[
+H_0:\beta_1=0
+]
+
+[
+H_1:\beta_1\neq0
+]
+
+Interpretación:
+
+* (H_0): no existe relación lineal poblacional entre antigüedad y autonomía.
+* (H_1): existe una relación lineal poblacional entre antigüedad y autonomía.
+
+Calcula:
+
+* pendiente estimada;
+* error estándar de la pendiente;
+* estadístico (t);
+* grados de libertad (n-2);
+* p-valor bilateral;
+* nivel de significancia;
+* decisión.
+
+El estadístico debe coincidir con:
+
+[
+t=\frac{b_1}{SE(b_1)}
+]
+
+y, en regresión simple, también con:
+
+[
+t=\frac{r\sqrt{n-2}}{\sqrt{1-r^2}}
+]
+
+Usa la salida de Statsmodels como fuente principal y la segunda fórmula como validación automatizada.
+
+# Estructura de resultado
+
+Crea una estructura tipada equivalente a:
+
+```python
+@dataclass(frozen=True)
+class ResultadoInferenciaRegresion:
+    cantidad: int
+    grados_libertad: int
+    intercepto: float
+    pendiente: float
+    error_estandar_intercepto: float
+    error_estandar_pendiente: float
+    estadistico_t_pendiente: float
+    p_valor_pendiente: float
+    coeficiente_pearson: float
+    coeficiente_determinacion: float
+    intervalo_intercepto: tuple[float, float]
+    intervalo_pendiente: tuple[float, float]
+    intervalo_correlacion: tuple[float, float] | None
+    nivel_confianza: float
+```
+
+Puede ajustarse el diseño si existe una alternativa más limpia, pero debe mantenerse el acceso explícito a todos esos resultados.
+
+# Nivel de significancia
+
+Agrega un deslizador independiente para la inferencia cuantitativa:
+
+* mínimo: 0.01;
+* máximo: 0.10;
+* valor inicial: 0.05;
+* paso: 0.01;
+* clave única de Streamlit.
+
+El p-valor no debe cambiar al modificar α.
+
+La decisión sí debe actualizarse.
+
+Regla:
+
+* si `p < α`: se rechaza (H_0);
+* si `p ≥ α`: no se rechaza (H_0).
+
+Nunca utilizar “se acepta H₀”.
+
+# Conclusión contextual
+
+Si `p < α` y la pendiente es negativa, generar una conclusión equivalente a:
+
+> Con un nivel de significancia de α, se rechaza H₀. Existe evidencia estadísticamente significativa de una relación lineal negativa entre la antigüedad de la batería y la autonomía real en la población simulada de monopatines Volt-Ar.
+
+Si `p < α` y la pendiente es positiva, adaptar el sentido.
+
+Si `p ≥ α`, generar:
+
+> Con un nivel de significancia de α, no se rechaza H₀. Los datos no proporcionan evidencia suficiente para afirmar que exista una relación lineal poblacional entre la antigüedad y la autonomía.
+
+No afirmar causalidad.
+
+Agregar:
+
+> La conclusión corresponde al escenario poblacional simulado con fines académicos.
+
+# Intervalos de confianza
+
+Incorpora un deslizador de nivel de confianza:
+
+* mínimo: 90 %;
+* máximo: 99 %;
+* valor inicial: 95 %;
+* paso: 1 %;
+* clave única de Streamlit.
+
+Calcula dinámicamente intervalos para:
+
+1. Intercepto poblacional (\beta_0).
+2. Pendiente poblacional (\beta_1).
+
+Utiliza la distribución t y los errores estándar del modelo, preferentemente mediante:
+
+```python
+modelo.conf_int(alpha=1 - nivel_confianza)
+```
+
+Los estimadores puntuales, el estadístico t y el p-valor no deben cambiar al modificar el nivel de confianza.
+
+Solo deben cambiar los límites de los intervalos.
+
+Mostrar claramente:
+
+* estimación puntual;
+* límite inferior;
+* límite superior;
+* nivel de confianza seleccionado.
+
+Interpretación de la pendiente:
+
+* si el intervalo no contiene cero, es coherente con el rechazo bilateral de (H_0) al nivel equivalente;
+* si contiene cero, no existe esa coherencia.
+
+No uses el intervalo como sustituto del p-valor; preséntalos como procedimientos equivalentes bajo las mismas condiciones.
+
+# Intervalo para el coeficiente de correlación
+
+Como complemento y para cubrir explícitamente la referencia de la consigna al coeficiente de correlación, calcula un intervalo para (\rho) mediante la transformación de Fisher:
+
+[
+z_r=\operatorname{atanh}(r)
+]
+
+[
+SE_z=\frac{1}{\sqrt{n-3}}
+]
+
+[
+z_r\pm z_{\alpha/2}SE_z
+]
+
+y transforma nuevamente con `tanh`.
+
+Requisitos:
+
+* solo se calcula cuando (n>3);
+* manejar adecuadamente (r=1) o (r=-1);
+* el intervalo debe permanecer dentro de ([-1,1]);
+* documentar que se trata de la aproximación de Fisher.
+
+Si el caso perfecto requiere un tratamiento especial, devuelve un resultado controlado y muestra una advertencia comprensible.
+
+# Página 2
+
+Conserva íntegramente el módulo cualitativo P-06.
+
+Agrega debajo:
+
+## Inferencia cuantitativa
+
+Debe mostrar:
+
+1. Modelo poblacional planteado.
+2. Hipótesis (H_0) y (H_1).
+3. Variable X y variable Y.
+4. Pendiente estimada.
+5. Error estándar de la pendiente.
+6. Estadístico t.
+7. Grados de libertad.
+8. P-valor.
+9. Deslizador de α.
+10. Decisión.
+11. Conclusión contextual.
+12. Deslizador de confianza entre 90 % y 99 %.
+13. Intervalo para (\beta_0).
+14. Intervalo para (\beta_1).
+15. Intervalo para (\rho), identificado como aproximación de Fisher.
+16. Aclaración de que la predicción y los diagnósticos se incorporarán en las fases siguientes.
+
+Utiliza tarjetas o columnas para organizar los valores.
+
+# Controles estadísticos
+
+Antes del ajuste, verifica:
+
+* al menos cuatro observaciones;
+* valores finitos;
+* ausencia de nulos;
+* variabilidad en X;
+* variabilidad en Y;
+* grados de libertad positivos.
+
+Muestra errores comprensibles y no trazas técnicas de Python.
+
+# Resultado esperado con el Excel predeterminado
+
+Aproximadamente:
+
+* (n=48);
+* (gl=46);
+* intercepto = 45.166071;
+* pendiente = -0.552768;
+* Pearson = -0.900523;
+* (R^2=0.810942);
+* estadístico (t) de la pendiente ≈ -14.0468;
+* p-valor bilateral ≈ (2.97\times10^{-18}).
+
+Para (\alpha=0.05), debe rechazarse (H_0).
+
+Los intervalos deben calcularse con el modelo real; no los fijes manualmente.
+
+# Pruebas automatizadas
+
+Agrega pruebas para:
+
+1. (gl=n-2).
+2. Estadístico t igual a pendiente/error estándar.
+3. Correspondencia con la fórmula basada en Pearson.
+4. P-valor dentro de [0,1].
+5. P-valor coincidente con Statsmodels.
+6. Decisión de rechazo cuando `p < α`.
+7. Decisión de no rechazo cuando `p ≥ α`.
+8. No utilizar “aceptar H₀”.
+9. Conclusión contextual negativa.
+10. Conclusión contextual positiva.
+11. Conclusión de no rechazo correctamente redactada.
+12. Intervalo de pendiente coincidente con Statsmodels.
+13. Intervalo de intercepto coincidente con Statsmodels.
+14. Los intervalos se amplían al aumentar el nivel de confianza.
+15. Los estimadores no cambian con el nivel de confianza.
+16. El p-valor no cambia con α.
+17. El intervalo de Fisher queda dentro de [-1,1].
+18. El intervalo de Fisher contiene al valor r estimado.
+19. Manejo de (n\leq3).
+20. Manejo de correlación perfecta.
+21. Error con X constante.
+22. Error con Y constante.
+23. Resultado aproximado del Excel predeterminado.
+24. P-06 permanece presente.
+25. P-04 y P-05 siguen funcionando.
+26. La Página 2 no muestra todavía predicciones ni diagnósticos.
+27. No aparece lenguaje causal.
+
+No crees pruebas frágiles sobre detalles visuales internos de Streamlit.
+
+# Documentación
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+Conserva íntegramente P-00 a P-06.
+
+Agrega P-07 con:
+
+* prompt completo;
+* archivos modificados;
+* fórmulas;
+* decisiones estadísticas;
+* intervalo de Fisher;
+* validaciones;
+* resultados;
+* problemas encontrados;
+* correcciones humanas;
+* commit propuesto.
+
+Documenta:
+
+* diferencia entre pendiente muestral y pendiente poblacional;
+* interpretación del estadístico t;
+* (gl=n-2);
+* relación entre prueba para pendiente y prueba para correlación;
+* diferencia entre α y nivel de confianza;
+* por qué el p-valor no cambia con α;
+* por qué los intervalos se amplían al aumentar la confianza;
+* ausencia de causalidad;
+* carácter simulado del escenario.
+
+# Archivos esperados
+
+Los cambios deberían concentrarse en:
+
+* `pages/2_Perfil_Analista.py`
+* `src/analisis_cuantitativo.py`
+* `tests/test_analisis_cuantitativo.py`
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+No modifiques simulación, carga ni análisis cualitativo salvo que exista un error real.
+
+# Validaciones finales
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Inicia Streamlit temporalmente:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+Detén el proceso después de comprobarlo.
+
+Ejecuta:
+
+```powershell
+git diff --check
+git status --short
+```
+
+Reporta para el Excel predeterminado:
+
+* n;
+* grados de libertad;
+* intercepto;
+* pendiente;
+* error estándar de la pendiente;
+* t;
+* p-valor;
+* decisión con α=0.05;
+* IC del 95 % para (\beta_0);
+* IC del 95 % para (\beta_1);
+* IC del 95 % para (\rho);
+* conclusión generada.
+
+# Informe final
+
+Informa:
+
+1. Plan aplicado.
+2. Archivos creados.
+3. Archivos modificados.
+4. Funciones implementadas.
+5. Resultados predeterminados.
+6. Intervalos calculados.
+7. Resultado total de pruebas.
+8. Resultado de Streamlit.
+9. Confirmación de que P-06 sigue funcionando.
+10. Confirmación de que no se implementaron predicción ni diagnósticos.
+11. Resultado de `git diff --check`.
+12. Estado de Git.
+13. Mensaje de commit propuesto.
+
+No realices commit, push, merge ni Pull Request.
+
+Detente y espera mi revisión.
+````
+
+### Archivos modificados
+
+- `README.md`
+- `docs/decisiones_metodologicas.md`
+- `docs/prompts.md`
+- `docs/registro_pruebas.md`
+- `pages/2_Perfil_Analista.py`
+- `src/analisis_cuantitativo.py`
+- `tests/test_analisis_cuantitativo.py`
+
+### Fórmulas
+
+- Modelo: `Y = β₀ + β₁X + ε`.
+- Estadístico t de la pendiente: `t = b₁ / SE(b₁)`.
+- Equivalencia con Pearson: `t = r * sqrt(n - 2) / sqrt(1 - r²)`.
+- Grados de libertad: `gl = n - 2`.
+- Intervalos de parámetros: `modelo.conf_int(alpha=1 - nivel_confianza)`.
+- Fisher para `ρ`: `atanh(r) ± z_critico / sqrt(n - 3)`, con transformación
+  inversa mediante `tanh`.
+
+### Decisiones estadísticas
+
+- Se reutiliza el mismo ajuste OLS con intercepto para mantener coherencia con
+  P-05.
+- La prueba para la pendiente es bilateral.
+- El p-valor no cambia al modificar `α`; solo cambia la decisión.
+- El nivel de confianza modifica únicamente los límites de los intervalos.
+- El intervalo de Fisher se omite de forma controlada si `n <= 3` o si la
+  correlación es perfecta.
+- La conclusión evita lenguaje causal y se limita al escenario poblacional
+  simulado.
+
+### Resultado
+
+Para el Excel predeterminado:
+
+- n: 48;
+- grados de libertad: 46;
+- intercepto: 45.166071483068;
+- pendiente: -0.552768328535;
+- error estándar de la pendiente: 0.039351986237;
+- estadístico t: -14.046770732231;
+- p-valor bilateral: 2.973713410738031e-18;
+- Pearson: -0.900523263956;
+- R²: 0.810942148925;
+- decisión con α = 0.05: se rechaza H0.
+
+Intervalos del 95 %:
+
+- `β₀`: [43.016085150163, 47.316057815973];
+- `β₁`: [-0.631979768441, -0.473556888629];
+- `ρ`: [-0.943296719385, -0.828334414381].
+
+### Problemas encontrados
+
+- Una prueba P-05 dependía del texto "al menos tres"; al parametrizar la cantidad
+  mínima para P-07 el mensaje cambió a "3". Se corrigió para mantener la
+  compatibilidad del mensaje previo.
+
+### Correcciones humanas
+
+No se registraron correcciones humanas durante la implementación de P-07.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- Inicio temporal de Streamlit en `http://127.0.0.1:8765`
+- `git diff --check`
+- `git status --short`
+
+### Commit propuesto
+
+```text
+feat: agregar inferencia cuantitativa
 ```
 
 ## Plantilla para próximos registros

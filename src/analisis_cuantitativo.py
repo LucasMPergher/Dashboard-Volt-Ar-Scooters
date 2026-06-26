@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from scipy.stats import pearsonr
+from scipy.stats import norm, pearsonr
 
 from src.config import VARIABLE_ANTIGUEDAD_BATERIA, VARIABLE_AUTONOMIA_REAL
 
@@ -29,15 +29,33 @@ class ResultadoRegresionMuestral:
     residuos: pd.Series
 
 
+@dataclass(frozen=True)
+class ResultadoInferenciaRegresion:
+    """Resultado inferencial de la regresión lineal simple."""
+
+    cantidad: int
+    grados_libertad: int
+    intercepto: float
+    pendiente: float
+    error_estandar_intercepto: float
+    error_estandar_pendiente: float
+    estadistico_t_pendiente: float
+    p_valor_pendiente: float
+    coeficiente_pearson: float
+    coeficiente_determinacion: float
+    intervalo_intercepto: tuple[float, float]
+    intervalo_pendiente: tuple[float, float]
+    intervalo_correlacion: tuple[float, float] | None
+    nivel_confianza: float
+
+
 def ajustar_regresion_lineal(
     datos: pd.DataFrame,
     columna_x: str = VARIABLE_ANTIGUEDAD_BATERIA,
     columna_y: str = VARIABLE_AUTONOMIA_REAL,
 ) -> ResultadoRegresionMuestral:
     """Ajusta una regresión lineal muestral con intercepto."""
-    x, y = _preparar_series_numericas(datos, columna_x, columna_y)
-    matriz_x = sm.add_constant(x, has_constant="add")
-    modelo = sm.OLS(y, matriz_x).fit()
+    x, y, modelo = _ajustar_modelo_ols(datos, columna_x, columna_y)
     coeficiente_pearson = float(pearsonr(x, y).statistic)
     coeficiente_determinacion = float(modelo.rsquared)
 
@@ -60,6 +78,119 @@ def ajustar_regresion_lineal(
         coeficiente_determinacion=coeficiente_determinacion,
         valores_ajustados=valores_ajustados,
         residuos=residuos,
+    )
+
+
+def ajustar_inferencia_regresion(
+    datos: pd.DataFrame,
+    nivel_confianza: float = 0.95,
+    columna_x: str = VARIABLE_ANTIGUEDAD_BATERIA,
+    columna_y: str = VARIABLE_AUTONOMIA_REAL,
+) -> ResultadoInferenciaRegresion:
+    """Ajusta la regresión y devuelve resultados inferenciales."""
+    _validar_nivel_confianza(nivel_confianza)
+    x, y, modelo = _ajustar_modelo_ols(
+        datos,
+        columna_x,
+        columna_y,
+        cantidad_minima=4,
+    )
+    cantidad = len(datos)
+    grados_libertad = int(modelo.df_resid)
+    if grados_libertad <= 0:
+        raise ErrorAnalisisCuantitativo(
+            "La regresión requiere grados de libertad positivos."
+        )
+
+    coeficiente_pearson = float(pearsonr(x, y).statistic)
+    alpha_intervalo = 1 - nivel_confianza
+    intervalos = modelo.conf_int(alpha=alpha_intervalo)
+
+    return ResultadoInferenciaRegresion(
+        cantidad=cantidad,
+        grados_libertad=grados_libertad,
+        intercepto=float(modelo.params["const"]),
+        pendiente=float(modelo.params[columna_x]),
+        error_estandar_intercepto=float(modelo.bse["const"]),
+        error_estandar_pendiente=float(modelo.bse[columna_x]),
+        estadistico_t_pendiente=float(modelo.tvalues[columna_x]),
+        p_valor_pendiente=float(modelo.pvalues[columna_x]),
+        coeficiente_pearson=coeficiente_pearson,
+        coeficiente_determinacion=float(modelo.rsquared),
+        intervalo_intercepto=(
+            float(intervalos.loc["const", 0]),
+            float(intervalos.loc["const", 1]),
+        ),
+        intervalo_pendiente=(
+            float(intervalos.loc[columna_x, 0]),
+            float(intervalos.loc[columna_x, 1]),
+        ),
+        intervalo_correlacion=calcular_intervalo_correlacion_fisher(
+            coeficiente_pearson,
+            cantidad,
+            nivel_confianza,
+        ),
+        nivel_confianza=nivel_confianza,
+    )
+
+
+def calcular_intervalo_correlacion_fisher(
+    coeficiente_pearson: float,
+    cantidad: int,
+    nivel_confianza: float = 0.95,
+) -> tuple[float, float] | None:
+    """Calcula un intervalo para rho mediante la aproximación de Fisher."""
+    _validar_pearson(coeficiente_pearson)
+    _validar_nivel_confianza(nivel_confianza)
+    if cantidad <= 3:
+        return None
+
+    if abs(coeficiente_pearson) >= 1:
+        return None
+
+    error_estandar_z = 1 / np.sqrt(cantidad - 3)
+    z_observado = np.arctanh(coeficiente_pearson)
+    z_critico = norm.ppf(1 - (1 - nivel_confianza) / 2)
+    limite_inferior = np.tanh(z_observado - z_critico * error_estandar_z)
+    limite_superior = np.tanh(z_observado + z_critico * error_estandar_z)
+    return (
+        float(np.clip(limite_inferior, -1, 1)),
+        float(np.clip(limite_superior, -1, 1)),
+    )
+
+
+def decidir_prueba_pendiente(p_valor: float, alpha: float) -> str:
+    """Aplica la regla de decisión bilateral para la pendiente."""
+    if p_valor < alpha:
+        return "Se rechaza H₀."
+
+    return "No se rechaza H₀."
+
+
+def concluir_prueba_pendiente(
+    p_valor: float,
+    alpha: float,
+    pendiente: float,
+) -> str:
+    """Genera una conclusión inferencial contextual para la pendiente."""
+    alpha_formateado = f"{alpha:.2f}"
+    if p_valor < alpha:
+        sentido = "negativa" if pendiente < 0 else "positiva"
+        return (
+            f"Con un nivel de significancia de {alpha_formateado}, se rechaza "
+            "H₀. Existe evidencia estadísticamente significativa de una "
+            f"relación lineal {sentido} entre la antigüedad de la batería y la "
+            "autonomía real en la población simulada de monopatines Volt-Ar. "
+            "La conclusión corresponde al escenario poblacional simulado con "
+            "fines académicos."
+        )
+
+    return (
+        f"Con un nivel de significancia de {alpha_formateado}, no se rechaza "
+        "H₀. Los datos no proporcionan evidencia suficiente para afirmar que "
+        "exista una relación lineal poblacional entre la antigüedad y la "
+        "autonomía. La conclusión corresponde al escenario poblacional "
+        "simulado con fines académicos."
     )
 
 
@@ -128,6 +259,7 @@ def _preparar_series_numericas(
     datos: pd.DataFrame,
     columna_x: str,
     columna_y: str,
+    cantidad_minima: int = 3,
 ) -> tuple[pd.Series, pd.Series]:
     """Valida y convierte las series necesarias para ajustar el modelo."""
     columnas_faltantes = [
@@ -139,9 +271,11 @@ def _preparar_series_numericas(
             f"Faltan columnas cuantitativas requeridas: {detalle}."
         )
 
-    if len(datos) < 3:
+    if len(datos) < cantidad_minima:
+        cantidad_texto = "tres" if cantidad_minima == 3 else str(cantidad_minima)
         raise ErrorAnalisisCuantitativo(
-            "Se requieren al menos tres observaciones para ajustar la regresión."
+            "Se requieren al menos "
+            f"{cantidad_texto} observaciones para ajustar la regresión."
         )
 
     if datos[[columna_x, columna_y]].isna().any().any():
@@ -177,6 +311,24 @@ def _preparar_series_numericas(
     return x, y
 
 
+def _ajustar_modelo_ols(
+    datos: pd.DataFrame,
+    columna_x: str,
+    columna_y: str,
+    cantidad_minima: int = 3,
+):
+    """Valida los datos y ajusta un único modelo OLS con intercepto."""
+    x, y = _preparar_series_numericas(
+        datos,
+        columna_x,
+        columna_y,
+        cantidad_minima=cantidad_minima,
+    )
+    matriz_x = sm.add_constant(x, has_constant="add")
+    modelo = sm.OLS(y, matriz_x).fit()
+    return x, y, modelo
+
+
 def _clasificar_intensidad_correlacion(magnitud: float) -> str:
     """Clasifica la intensidad de |r| con un criterio heurístico documentado."""
     if magnitud < 0.20:
@@ -203,4 +355,12 @@ def _validar_r_cuadrado(coeficiente_determinacion: float) -> None:
     if not 0 <= coeficiente_determinacion <= 1:
         raise ErrorAnalisisCuantitativo(
             "El coeficiente de determinación debe estar entre 0 y 1."
+        )
+
+
+def _validar_nivel_confianza(nivel_confianza: float) -> None:
+    """Valida que el nivel de confianza sea una proporción válida."""
+    if not 0 < nivel_confianza < 1:
+        raise ErrorAnalisisCuantitativo(
+            "El nivel de confianza debe estar entre 0 y 1."
         )
