@@ -243,7 +243,58 @@
 - Límites físicos: no se recortan automáticamente la predicción ni los
   intervalos al rango operativo 15-45 km. Si un límite queda fuera de ese rango,
   se informa que el resultado se conserva sin recorte para no alterar el modelo.
-- Alcance pendiente: no se incorporan todavía diagnósticos del modelo ni pruebas
-  adicionales de normalidad u homocedasticidad.
+- Alcance de P-08: la calculadora no incorporaba todavía diagnósticos del
+  modelo ni pruebas adicionales de normalidad u homocedasticidad. Esos elementos
+  se agregan en P-09.
 - Ausencia de causalidad: la calculadora estima valores bajo el modelo lineal,
   pero no afirma que la antigüedad cause cambios en la autonomía.
+
+## Fase P-09: diagnóstico de residuos y validación técnica de supuestos
+
+- Enfoque: validación técnica del mismo modelo OLS con intercepto utilizado en
+  P-05, P-07 y P-08. No se ajusta un modelo alternativo.
+- Fuente de datos: el diagnóstico usa el DataFrame activo en Streamlit
+  (`st.session_state["datos_activos"]`) y se actualiza cuando cambia el archivo
+  semanal cargado.
+- Definición de residuo: `e_i = y_i - y_hat_i`, donde `y_i` es la autonomía
+  observada y `y_hat_i` es la autonomía ajustada por el modelo lineal.
+- Residuos estandarizados: se calculan con la influencia de Statsmodels mediante
+  `modelo.get_influence().resid_studentized_internal`.
+- Criterios orientativos: se informan conteos de observaciones con
+  `|residuo estandarizado| > 2` y `|residuo estandarizado| > 3`. Estos umbrales
+  son ayudas diagnósticas; no eliminan observaciones ni prueban por sí solos que
+  un dato sea erróneo.
+- Linealidad: el gráfico de residuos frente a valores ajustados permite observar
+  si aparecen patrones curvos o sistemáticos alrededor de cero.
+- Homocedasticidad: el mismo gráfico permite revisar si la dispersión de los
+  residuos se mantiene aproximadamente constante a lo largo de los valores
+  ajustados. Una forma de embudo puede sugerir heterocedasticidad.
+- Normalidad: el supuesto relevante corresponde a los errores o residuos del
+  modelo, no necesariamente a la distribución marginal de X o de Y.
+- Q-Q Plot: se construye con `scipy.stats.probplot` y se utiliza como herramienta
+  principal para evaluar compatibilidad visual con normalidad de residuos.
+- Histograma: se presenta como complemento del Q-Q Plot y no lo sustituye.
+- Independencia: no puede validarse completamente con estos gráficos. Depende del
+  diseño de recolección; se asume que cada fila corresponde a un monopatín
+  distinto y que las observaciones no dependen entre sí.
+- Decisión interpretativa: los gráficos no producen automáticamente una
+  aprobación ni invalidación del modelo. La evaluación requiere revisar patrones,
+  contexto, tamaño muestral y supuestos de recolección.
+
+### Corrección posterior a la revisión manual
+
+- Durante la navegación manual a la sección "Residuos frente a valores
+  ajustados" se detectó un `NameError`.
+- La página utilizaba `VARIABLE_SUCURSAL` y `VARIABLE_NIVEL_FALLOS` en el
+  tooltip del gráfico de residuos, pero no las importaba desde `src.config`.
+- El inicio del servidor Streamlit no había detectado el problema porque la
+  página específica todavía no había sido ejecutada mediante navegación.
+- Se agregaron ambos imports canónicos desde `src.config`, sin crear constantes
+  duplicadas.
+- No se modificaron cálculos, residuos, gráficos ni resultados estadísticos.
+- Se agregó el test `test_pagina_analista_importa_constantes_variables_usadas`,
+  basado en AST, para verificar que las constantes `VARIABLE_*` utilizadas por
+  la página existan y sean importadas desde `src.config`.
+- Luego de la corrección aprobaron 204 pruebas.
+- Se navegó explícitamente a `Perfil Analista` y el gráfico de residuos se
+  renderizó sin `NameError`.

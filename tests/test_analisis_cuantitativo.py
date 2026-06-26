@@ -1,5 +1,6 @@
 """Pruebas asociadas al análisis cuantitativo gerencial."""
 
+import ast
 from pathlib import Path
 
 import numpy as np
@@ -7,16 +8,22 @@ import pandas as pd
 import pytest
 import statsmodels.api as sm
 
+import src.config as config
 from src.analisis_cuantitativo import (
     ErrorAnalisisCuantitativo,
+    ResultadoDiagnosticoResiduos,
     ajustar_regresion_lineal,
     ajustar_inferencia_regresion,
     calcular_ancho_intervalo,
+    calcular_diagnostico_residuos,
     calcular_intervalo_correlacion_fisher,
     calcular_prediccion,
     concluir_prueba_pendiente,
     construir_bandas_prediccion,
+    construir_datos_histograma_residuos,
+    construir_datos_qq,
     construir_datos_recta_regresion,
+    construir_datos_residuos_ajustados,
     decidir_prueba_pendiente,
     formatear_ecuacion_regresion,
     interpretar_correlacion_muestral,
@@ -26,6 +33,8 @@ from src.carga_datos import cargar_archivo_semanal
 from src.config import (
     ESCALAS_VARIABLES,
     TIPOS_VARIABLES,
+    VARIABLE_NIVEL_FALLOS,
+    VARIABLE_SUCURSAL,
     VARIABLE_ANTIGUEDAD_BATERIA,
     VARIABLE_AUTONOMIA_REAL,
     VARIABLES_ESTADISTICAS,
@@ -55,6 +64,71 @@ def _datos_no_perfectos() -> pd.DataFrame:
             VARIABLE_ANTIGUEDAD_BATERIA: [2, 5, 8, 11, 14, 17, 20, 23],
             VARIABLE_AUTONOMIA_REAL: [44.0, 42.8, 41.0, 40.5, 37.3, 36.6, 34.0, 33.8],
         }
+    )
+
+
+def _datos_no_perfectos_con_contexto() -> pd.DataFrame:
+    """Construye datos cuantitativos con las variables cualitativas del proyecto."""
+    datos = _datos_no_perfectos()
+    datos[VARIABLE_SUCURSAL] = [
+        "Rosario",
+        "Córdoba",
+        "Rosario",
+        "Córdoba",
+        "Rosario",
+        "Córdoba",
+        "Rosario",
+        "Córdoba",
+    ]
+    datos[VARIABLE_NIVEL_FALLOS] = [
+        "Bajo",
+        "Medio",
+        "Alto",
+        "Bajo",
+        "Medio",
+        "Alto",
+        "Bajo",
+        "Medio",
+    ]
+    return datos[
+        [
+            VARIABLE_SUCURSAL,
+            VARIABLE_NIVEL_FALLOS,
+            VARIABLE_ANTIGUEDAD_BATERIA,
+            VARIABLE_AUTONOMIA_REAL,
+        ]
+    ]
+
+
+def _diagnostico_controlado_atipicos(datos: pd.DataFrame) -> ResultadoDiagnosticoResiduos:
+    """Construye un diagnóstico controlado con residuos estandarizados atípicos."""
+    valores_ajustados = pd.Series(
+        np.full(len(datos), 30.0),
+        index=datos.index,
+        name="Autonomia_Ajustada_Km",
+    )
+    residuos = pd.Series(
+        np.linspace(-3.5, 3.5, len(datos)),
+        index=datos.index,
+        name="Residuo_Km",
+    )
+    residuos_estandarizados = pd.Series(
+        [0.0, 1.1, 2.01, -2.5, 3.2, -3.01, 0.2, 1.8],
+        index=datos.index,
+        name="Residuo_Estandarizado",
+    )
+    return ResultadoDiagnosticoResiduos(
+        valores_ajustados=valores_ajustados,
+        residuos=residuos,
+        residuos_estandarizados=residuos_estandarizados,
+        media_residuos=float(residuos.mean()),
+        desviacion_residuos=float(residuos.std(ddof=1)),
+        cantidad_residuos_atipicos_dos=int(
+            (residuos_estandarizados.abs() > 2).sum()
+        ),
+        cantidad_residuos_atipicos_tres=int(
+            (residuos_estandarizados.abs() > 3).sum()
+        ),
     )
 
 
@@ -593,19 +667,14 @@ def test_p04_y_p05_siguen_funcionando_en_pagina_gerencial() -> None:
     assert "ajustar_regresion_lineal" in contenido
 
 
-def test_pagina_analista_no_muestra_diagnosticos_pendientes() -> None:
-    """Página 2 no implementa todavía gráficos de diagnóstico."""
-    contenido = Path("pages/2_Perfil_Analista.py").read_text(
-        encoding="utf-8"
-    ).lower()
-    frases_pendientes = (
-        "q-q plot",
-        "histograma de residuos",
-        "gráfico de residuos",
-    )
+def test_pagina_analista_muestra_diagnosticos_de_residuos() -> None:
+    """La Página 2 incorpora la validación técnica de supuestos P-09."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
 
-    for frase in frases_pendientes:
-        assert frase not in contenido
+    assert "Validación técnica de supuestos" in contenido
+    assert "Residuos frente a valores ajustados" in contenido
+    assert "Q-Q Plot de residuos" in contenido
+    assert "histograma de residuos" in contenido.lower()
 
 
 def test_pagina_analista_no_contiene_lenguaje_causal() -> None:
@@ -851,3 +920,306 @@ def test_bandas_de_prediccion_usan_modelo_y_confianza() -> None:
     assert "prediccion_puntual" in bandas.columns
     assert "media_inferior" in bandas.columns
     assert "individual_inferior" in bandas.columns
+
+
+def test_diagnostico_residuos_conserva_cantidad_de_vectores() -> None:
+    """El diagnóstico genera un valor ajustado y un residuo por fila."""
+    datos = _datos_no_perfectos()
+    diagnostico = calcular_diagnostico_residuos(datos)
+
+    assert len(diagnostico.valores_ajustados) == len(datos)
+    assert len(diagnostico.residuos) == len(datos)
+    assert len(diagnostico.residuos_estandarizados) == len(datos)
+
+
+def test_diagnostico_residuos_calcula_observado_menos_ajustado() -> None:
+    """Cada residuo coincide con y observado menos y ajustado."""
+    datos = _datos_no_perfectos()
+    diagnostico = calcular_diagnostico_residuos(datos)
+    esperado = (
+        datos[VARIABLE_AUTONOMIA_REAL].to_numpy(dtype=float)
+        - diagnostico.valores_ajustados.to_numpy(dtype=float)
+    )
+
+    assert diagnostico.residuos.to_numpy(dtype=float) == pytest.approx(esperado)
+
+
+def test_diagnostico_residuos_promedia_cero() -> None:
+    """El modelo con intercepto mantiene residuos centrados en cero."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+
+    assert diagnostico.media_residuos == pytest.approx(0.0, abs=1e-12)
+
+
+def test_diagnostico_residuos_estandarizados_son_finitos() -> None:
+    """Los residuos estandarizados internos deben ser valores finitos."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+
+    assert np.isfinite(diagnostico.residuos_estandarizados).all()
+
+
+def test_diagnostico_residuos_tiene_variabilidad_residual() -> None:
+    """El diagnóstico requiere variabilidad residual observable."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+
+    assert diagnostico.desviacion_residuos > 0
+
+
+def test_diagnostico_reutiliza_mismo_modelo_lineal() -> None:
+    """Los ajustados diagnósticos coinciden con el modelo inferencial previo."""
+    datos = _datos_no_perfectos()
+    diagnostico = calcular_diagnostico_residuos(datos)
+    regresion = ajustar_regresion_lineal(datos)
+
+    assert diagnostico.valores_ajustados.to_numpy(dtype=float) == pytest.approx(
+        regresion.valores_ajustados.to_numpy(dtype=float)
+    )
+
+
+def test_datos_residuos_ajustados_conservan_filas() -> None:
+    """La tabla para el gráfico no elimina observaciones."""
+    datos = _datos_no_perfectos_con_contexto()
+    diagnostico = calcular_diagnostico_residuos(datos)
+    datos_grafico = construir_datos_residuos_ajustados(datos, diagnostico)
+
+    assert len(datos_grafico) == len(datos)
+
+
+def test_datos_residuos_ajustados_incluyen_columnas_para_tooltip() -> None:
+    """El gráfico dispone de variables de contexto sin agregar variables estadísticas."""
+    datos = _datos_no_perfectos_con_contexto()
+    diagnostico = calcular_diagnostico_residuos(datos)
+    datos_grafico = construir_datos_residuos_ajustados(datos, diagnostico)
+    columnas_esperadas = {
+        VARIABLE_ANTIGUEDAD_BATERIA,
+        VARIABLE_SUCURSAL,
+        VARIABLE_NIVEL_FALLOS,
+        "Autonomia_Observada_Km",
+        "Autonomia_Ajustada_Km",
+        "Residuo_Km",
+        "Residuo_Estandarizado",
+        "Atipico_Mayor_2",
+        "Atipico_Mayor_3",
+    }
+
+    assert columnas_esperadas.issubset(set(datos_grafico.columns))
+
+
+def test_datos_residuos_ajustados_identifican_atipicos_orientativos() -> None:
+    """Los puntos con |residuo estandarizado| > 2 quedan marcados."""
+    datos = _datos_no_perfectos_con_contexto()
+    diagnostico = _diagnostico_controlado_atipicos(datos)
+    datos_grafico = construir_datos_residuos_ajustados(datos, diagnostico)
+
+    assert datos_grafico["Atipico_Mayor_2"].sum() == 4
+    assert datos_grafico["Atipico_Mayor_3"].sum() == 2
+
+
+def test_diagnostico_conteos_atipicos_coinciden_con_calculo_manual() -> None:
+    """Los conteos orientativos usan umbrales estrictos de 2 y 3."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+
+    assert diagnostico.cantidad_residuos_atipicos_dos == int(
+        (diagnostico.residuos_estandarizados.abs() > 2).sum()
+    )
+    assert diagnostico.cantidad_residuos_atipicos_tres == int(
+        (diagnostico.residuos_estandarizados.abs() > 3).sum()
+    )
+
+
+def test_datos_residuos_ajustados_no_eliminan_atipicos() -> None:
+    """La marcación de atípicos no filtra registros del DataFrame."""
+    datos = _datos_no_perfectos_con_contexto()
+    diagnostico = _diagnostico_controlado_atipicos(datos)
+    datos_grafico = construir_datos_residuos_ajustados(datos, diagnostico)
+
+    assert len(datos_grafico) == len(datos)
+    assert datos_grafico["Atipico_Mayor_2"].any()
+
+
+def test_datos_qq_conservan_cantidad_de_residuos() -> None:
+    """El Q-Q Plot contiene un punto por residuo válido."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+    datos_qq = construir_datos_qq(diagnostico.residuos)
+
+    assert len(datos_qq) == len(diagnostico.residuos)
+
+
+def test_datos_qq_cuantiles_teoricos_ordenados() -> None:
+    """Los cuantiles teóricos se construyen de menor a mayor."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+    datos_qq = construir_datos_qq(diagnostico.residuos)
+
+    assert datos_qq["Cuantil_Teorico"].is_monotonic_increasing
+
+
+def test_datos_qq_residuos_ordenados() -> None:
+    """Los residuos del Q-Q Plot quedan ordenados para comparar cuantiles."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+    datos_qq = construir_datos_qq(diagnostico.residuos)
+
+    assert datos_qq["Residuo_Ordenado"].is_monotonic_increasing
+
+
+def test_datos_qq_linea_de_referencia_finita() -> None:
+    """La línea de referencia del Q-Q Plot tiene parámetros finitos."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+    datos_qq = construir_datos_qq(diagnostico.residuos)
+
+    assert np.isfinite(datos_qq["Linea_Referencia"]).all()
+    assert np.isfinite(datos_qq.attrs["pendiente_referencia"])
+    assert np.isfinite(datos_qq.attrs["intercepto_referencia"])
+
+
+def test_histograma_residuos_suma_frecuencias() -> None:
+    """El histograma cuenta todos los residuos válidos."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+    datos_histograma = construir_datos_histograma_residuos(diagnostico.residuos)
+
+    assert datos_histograma["Frecuencia"].sum() == len(diagnostico.residuos)
+
+
+def test_histograma_residuos_construye_intervalos_validos() -> None:
+    """Cada intervalo del histograma debe tener límite superior mayor."""
+    diagnostico = calcular_diagnostico_residuos(_datos_no_perfectos())
+    datos_histograma = construir_datos_histograma_residuos(diagnostico.residuos)
+
+    assert (
+        datos_histograma["Limite_Superior"]
+        > datos_histograma["Limite_Inferior"]
+    ).all()
+
+
+def test_histograma_residuos_rechaza_residuos_no_finitos() -> None:
+    """El histograma no acepta residuos infinitos."""
+    residuos = pd.Series([0.1, np.inf, -0.2])
+
+    with pytest.raises(ErrorAnalisisCuantitativo, match="no finitos"):
+        construir_datos_histograma_residuos(residuos)
+
+
+def test_diagnostico_rechaza_x_constante() -> None:
+    """El diagnóstico no ajusta modelo con X sin variabilidad."""
+    datos = _datos_no_perfectos()
+    datos[VARIABLE_ANTIGUEDAD_BATERIA] = 10
+
+    with pytest.raises(ErrorAnalisisCuantitativo, match="variable X"):
+        calcular_diagnostico_residuos(datos)
+
+
+def test_diagnostico_rechaza_y_constante() -> None:
+    """El diagnóstico no ajusta modelo con Y sin variabilidad."""
+    datos = _datos_no_perfectos()
+    datos[VARIABLE_AUTONOMIA_REAL] = 30
+
+    with pytest.raises(ErrorAnalisisCuantitativo, match="variable Y"):
+        calcular_diagnostico_residuos(datos)
+
+
+def test_diagnostico_rechaza_residuos_sin_variabilidad() -> None:
+    """Un ajuste perfectamente lineal no aporta diagnóstico residual útil."""
+    datos = _datos_cuantitativos(cantidad=8)
+
+    with pytest.raises(ErrorAnalisisCuantitativo, match="residuos"):
+        calcular_diagnostico_residuos(datos)
+
+
+def test_diagnostico_excel_predeterminado_coherente() -> None:
+    """El Excel predeterminado permite diagnosticar los 48 casos activos."""
+    datos = cargar_archivo_semanal(
+        Path("data/volt_ar_semana_01.xlsx"),
+        "volt_ar_semana_01.xlsx",
+    )
+    diagnostico = calcular_diagnostico_residuos(datos)
+
+    assert len(diagnostico.residuos) == 48
+    assert diagnostico.media_residuos == pytest.approx(0.0, abs=1e-12)
+    assert diagnostico.desviacion_residuos > 0
+    assert (
+        diagnostico.cantidad_residuos_atipicos_tres
+        <= diagnostico.cantidad_residuos_atipicos_dos
+    )
+
+
+def test_pagina_analista_contiene_validacion_tecnica_supuestos() -> None:
+    """La Página 2 presenta la sección P-09."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
+
+    assert "Validación técnica de supuestos" in contenido
+    assert "calcular_diagnostico_residuos" in contenido
+
+
+def test_pagina_analista_contiene_graficos_diagnosticos() -> None:
+    """La sección P-09 incluye residuos-ajustados, Q-Q Plot e histograma."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
+
+    assert "Residuos frente a valores ajustados" in contenido
+    assert "Q-Q Plot de residuos" in contenido
+    assert "Ver histograma de residuos" in contenido
+
+
+def test_pagina_analista_importa_constantes_variables_usadas() -> None:
+    """Las constantes VARIABLE_* usadas por la página deben estar importadas."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
+    arbol = ast.parse(contenido)
+    constantes_usadas = {
+        nodo.id
+        for nodo in ast.walk(arbol)
+        if isinstance(nodo, ast.Name) and nodo.id.startswith("VARIABLE_")
+    }
+    constantes_importadas = {
+        alias.name
+        for nodo in arbol.body
+        if isinstance(nodo, ast.ImportFrom) and nodo.module == "src.config"
+        for alias in nodo.names
+        if alias.name.startswith("VARIABLE_")
+    }
+    constantes_config = {
+        nombre for nombre in dir(config) if nombre.startswith("VARIABLE_")
+    }
+
+    assert constantes_usadas <= constantes_importadas
+    assert constantes_importadas <= constantes_config
+
+
+def test_pagina_analista_incluye_linea_horizontal_cero_residual() -> None:
+    """El gráfico de residuos frente a ajustados muestra la referencia y = 0."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
+
+    assert "add_hline" in contenido
+    assert "y=0" in contenido
+
+
+def test_pagina_analista_explica_normalidad_sobre_residuos() -> None:
+    """La normalidad se explica sobre residuos, no sobre X o Y."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(
+        encoding="utf-8"
+    ).lower()
+
+    assert "normalidad se refiere a los residuos" in contenido
+    assert "no necesariamente a la distribución de x o de y" in contenido
+
+
+def test_pagina_analista_no_declara_cumplimiento_automatico_de_supuestos() -> None:
+    """La interfaz no debe emitir conclusiones automáticas de validez."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(
+        encoding="utf-8"
+    ).lower()
+    frases_prohibidas = (
+        "todos los supuestos se cumplen",
+        "el modelo es válido",
+        "el modelo queda invalidado",
+    )
+
+    for frase in frases_prohibidas:
+        assert frase not in contenido
+
+
+def test_pagina_analista_conserva_p06_p07_p08_y_p09() -> None:
+    """El diagnóstico no reemplaza módulos inferenciales ni la calculadora."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
+
+    assert "Inferencia cualitativa" in contenido
+    assert "Inferencia cuantitativa" in contenido
+    assert "Calculadora de predicción" in contenido
+    assert "Validación técnica de supuestos" in contenido

@@ -7,13 +7,15 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from scipy.stats import norm, pearsonr
+from scipy.stats import norm, pearsonr, probplot
 
 from src.config import (
     ANTIGUEDAD_MAXIMA_MESES,
     ANTIGUEDAD_MINIMA_MESES,
     VARIABLE_ANTIGUEDAD_BATERIA,
     VARIABLE_AUTONOMIA_REAL,
+    VARIABLE_NIVEL_FALLOS,
+    VARIABLE_SUCURSAL,
 )
 
 
@@ -68,6 +70,19 @@ class ResultadoPrediccion:
     es_extrapolacion: bool
     minimo_x_observado: float
     maximo_x_observado: float
+
+
+@dataclass(frozen=True)
+class ResultadoDiagnosticoResiduos:
+    """Resultado técnico para diagnóstico de residuos del modelo lineal."""
+
+    valores_ajustados: pd.Series
+    residuos: pd.Series
+    residuos_estandarizados: pd.Series
+    media_residuos: float
+    desviacion_residuos: float
+    cantidad_residuos_atipicos_dos: int
+    cantidad_residuos_atipicos_tres: int
 
 
 def ajustar_regresion_lineal(
@@ -240,6 +255,139 @@ def construir_bandas_prediccion(
 def calcular_ancho_intervalo(limite_inferior: float, limite_superior: float) -> float:
     """Calcula el ancho de un intervalo."""
     return float(limite_superior - limite_inferior)
+
+
+def calcular_diagnostico_residuos(
+    datos: pd.DataFrame,
+    columna_x: str = VARIABLE_ANTIGUEDAD_BATERIA,
+    columna_y: str = VARIABLE_AUTONOMIA_REAL,
+) -> ResultadoDiagnosticoResiduos:
+    """Calcula residuos y métricas diagnósticas del modelo OLS."""
+    _, _, modelo = _ajustar_modelo_ols(
+        datos,
+        columna_x,
+        columna_y,
+        cantidad_minima=4,
+    )
+    influencia = modelo.get_influence()
+    valores_ajustados = pd.Series(
+        modelo.fittedvalues,
+        index=datos.index,
+        name="Autonomia_Ajustada_Km",
+    )
+    residuos = pd.Series(
+        modelo.resid,
+        index=datos.index,
+        name="Residuo_Km",
+    )
+    residuos_estandarizados = pd.Series(
+        influencia.resid_studentized_internal,
+        index=datos.index,
+        name="Residuo_Estandarizado",
+    )
+    _validar_series_diagnostico(valores_ajustados, residuos, residuos_estandarizados)
+    desviacion_residuos = float(residuos.std(ddof=1))
+    if desviacion_residuos <= 1e-12:
+        raise ErrorAnalisisCuantitativo(
+            "No se puede diagnosticar el modelo: los residuos no tienen variabilidad."
+        )
+
+    return ResultadoDiagnosticoResiduos(
+        valores_ajustados=valores_ajustados,
+        residuos=residuos,
+        residuos_estandarizados=residuos_estandarizados,
+        media_residuos=float(residuos.mean()),
+        desviacion_residuos=desviacion_residuos,
+        cantidad_residuos_atipicos_dos=int(
+            (residuos_estandarizados.abs() > 2).sum()
+        ),
+        cantidad_residuos_atipicos_tres=int(
+            (residuos_estandarizados.abs() > 3).sum()
+        ),
+    )
+
+
+def construir_datos_residuos_ajustados(
+    datos: pd.DataFrame,
+    diagnostico: ResultadoDiagnosticoResiduos,
+    columna_x: str = VARIABLE_ANTIGUEDAD_BATERIA,
+    columna_y: str = VARIABLE_AUTONOMIA_REAL,
+) -> pd.DataFrame:
+    """Construye datos para el gráfico residuos frente a ajustados."""
+    resultado = pd.DataFrame(
+        {
+            columna_x: datos[columna_x].to_numpy(),
+            VARIABLE_SUCURSAL: datos[VARIABLE_SUCURSAL].to_numpy(),
+            VARIABLE_NIVEL_FALLOS: datos[VARIABLE_NIVEL_FALLOS].to_numpy(),
+            "Autonomia_Observada_Km": datos[columna_y].to_numpy(dtype=float),
+            "Autonomia_Ajustada_Km": diagnostico.valores_ajustados.to_numpy(
+                dtype=float
+            ),
+            "Residuo_Km": diagnostico.residuos.to_numpy(dtype=float),
+            "Residuo_Estandarizado": diagnostico.residuos_estandarizados.to_numpy(
+                dtype=float
+            ),
+        },
+        index=datos.index,
+    )
+    resultado["Atipico_Mayor_2"] = resultado["Residuo_Estandarizado"].abs() > 2
+    resultado["Atipico_Mayor_3"] = resultado["Residuo_Estandarizado"].abs() > 3
+    return resultado
+
+
+def construir_datos_qq(residuos: pd.Series) -> pd.DataFrame:
+    """Construye puntos y línea de referencia para un Q-Q Plot normal."""
+    residuos_validos = pd.Series(residuos, dtype=float).dropna()
+    if len(residuos_validos) < 2:
+        raise ErrorAnalisisCuantitativo(
+            "Se requieren al menos dos residuos para construir el Q-Q Plot."
+        )
+    if not np.isfinite(residuos_validos).all():
+        raise ErrorAnalisisCuantitativo(
+            "No se puede construir el Q-Q Plot con residuos no finitos."
+        )
+
+    (cuantiles_teoricos, residuos_ordenados), (pendiente, intercepto, _) = probplot(
+        residuos_validos,
+        dist="norm",
+    )
+    datos_qq = pd.DataFrame(
+        {
+            "Cuantil_Teorico": cuantiles_teoricos,
+            "Residuo_Ordenado": residuos_ordenados,
+            "Linea_Referencia": pendiente * cuantiles_teoricos + intercepto,
+        }
+    )
+    datos_qq.attrs["pendiente_referencia"] = float(pendiente)
+    datos_qq.attrs["intercepto_referencia"] = float(intercepto)
+    return datos_qq
+
+
+def construir_datos_histograma_residuos(
+    residuos: pd.Series,
+    cantidad_intervalos: int | None = None,
+) -> pd.DataFrame:
+    """Construye frecuencias de histograma para los residuos."""
+    residuos_validos = pd.Series(residuos, dtype=float).dropna()
+    if len(residuos_validos) == 0:
+        raise ErrorAnalisisCuantitativo(
+            "Se requieren residuos para construir el histograma."
+        )
+    if not np.isfinite(residuos_validos).all():
+        raise ErrorAnalisisCuantitativo(
+            "No se puede construir el histograma con residuos no finitos."
+        )
+
+    bins = cantidad_intervalos if cantidad_intervalos is not None else "auto"
+    frecuencias, limites = np.histogram(residuos_validos, bins=bins)
+    return pd.DataFrame(
+        {
+            "Limite_Inferior": limites[:-1],
+            "Limite_Superior": limites[1:],
+            "Marca_Clase": (limites[:-1] + limites[1:]) / 2,
+            "Frecuencia": frecuencias.astype(int),
+        }
+    )
 
 
 def calcular_intervalo_correlacion_fisher(
@@ -468,6 +616,28 @@ def _construir_exog_prediccion(valor_x: float, columna_x: str) -> pd.DataFrame:
             columna_x: [valor_x],
         }
     )
+
+
+def _validar_series_diagnostico(
+    valores_ajustados: pd.Series,
+    residuos: pd.Series,
+    residuos_estandarizados: pd.Series,
+) -> None:
+    """Valida las series necesarias para diagnósticos de residuos."""
+    if not (
+        len(valores_ajustados)
+        == len(residuos)
+        == len(residuos_estandarizados)
+    ):
+        raise ErrorAnalisisCuantitativo(
+            "Las series de diagnóstico deben tener la misma cantidad de filas."
+        )
+
+    for serie in (valores_ajustados, residuos, residuos_estandarizados):
+        if not np.isfinite(serie).all():
+            raise ErrorAnalisisCuantitativo(
+                "No se puede diagnosticar el modelo con valores no finitos."
+            )
 
 
 def _clasificar_intensidad_correlacion(magnitud: float) -> str:
