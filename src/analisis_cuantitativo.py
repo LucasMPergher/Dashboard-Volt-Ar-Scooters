@@ -9,7 +9,12 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.stats import norm, pearsonr
 
-from src.config import VARIABLE_ANTIGUEDAD_BATERIA, VARIABLE_AUTONOMIA_REAL
+from src.config import (
+    ANTIGUEDAD_MAXIMA_MESES,
+    ANTIGUEDAD_MINIMA_MESES,
+    VARIABLE_ANTIGUEDAD_BATERIA,
+    VARIABLE_AUTONOMIA_REAL,
+)
 
 
 class ErrorAnalisisCuantitativo(ValueError):
@@ -47,6 +52,22 @@ class ResultadoInferenciaRegresion:
     intervalo_pendiente: tuple[float, float]
     intervalo_correlacion: tuple[float, float] | None
     nivel_confianza: float
+
+
+@dataclass(frozen=True)
+class ResultadoPrediccion:
+    """Resultado de predicción para un valor de antigüedad."""
+
+    valor_x: float
+    prediccion_puntual: float
+    limite_inferior_media: float
+    limite_superior_media: float
+    limite_inferior_individual: float
+    limite_superior_individual: float
+    nivel_confianza: float
+    es_extrapolacion: bool
+    minimo_x_observado: float
+    maximo_x_observado: float
 
 
 def ajustar_regresion_lineal(
@@ -132,6 +153,93 @@ def ajustar_inferencia_regresion(
         ),
         nivel_confianza=nivel_confianza,
     )
+
+
+def calcular_prediccion(
+    datos: pd.DataFrame,
+    valor_x: float,
+    nivel_confianza: float = 0.95,
+    columna_x: str = VARIABLE_ANTIGUEDAD_BATERIA,
+    columna_y: str = VARIABLE_AUTONOMIA_REAL,
+) -> ResultadoPrediccion:
+    """Calcula predicción puntual e intervalos para un valor de X."""
+    _validar_nivel_confianza(nivel_confianza)
+    valor_x_validado = _validar_valor_x_operativo(valor_x)
+    x, _, modelo = _ajustar_modelo_ols(
+        datos,
+        columna_x,
+        columna_y,
+        cantidad_minima=4,
+    )
+    minimo_x_observado = float(x.min())
+    maximo_x_observado = float(x.max())
+    nuevos_datos = _construir_exog_prediccion(valor_x_validado, columna_x)
+    resumen = modelo.get_prediction(nuevos_datos).summary_frame(
+        alpha=1 - nivel_confianza
+    )
+    fila = resumen.iloc[0]
+
+    return ResultadoPrediccion(
+        valor_x=valor_x_validado,
+        prediccion_puntual=float(fila["mean"]),
+        limite_inferior_media=float(fila["mean_ci_lower"]),
+        limite_superior_media=float(fila["mean_ci_upper"]),
+        limite_inferior_individual=float(fila["obs_ci_lower"]),
+        limite_superior_individual=float(fila["obs_ci_upper"]),
+        nivel_confianza=nivel_confianza,
+        es_extrapolacion=not minimo_x_observado
+        <= valor_x_validado
+        <= maximo_x_observado,
+        minimo_x_observado=minimo_x_observado,
+        maximo_x_observado=maximo_x_observado,
+    )
+
+
+def construir_bandas_prediccion(
+    datos: pd.DataFrame,
+    nivel_confianza: float = 0.95,
+    columna_x: str = VARIABLE_ANTIGUEDAD_BATERIA,
+    columna_y: str = VARIABLE_AUTONOMIA_REAL,
+    cantidad_puntos: int = 100,
+) -> pd.DataFrame:
+    """Construye recta e intervalos para graficar la predicción."""
+    _validar_nivel_confianza(nivel_confianza)
+    if cantidad_puntos < 2:
+        raise ErrorAnalisisCuantitativo(
+            "Se requieren al menos dos puntos para graficar la predicción."
+        )
+
+    x, _, modelo = _ajustar_modelo_ols(
+        datos,
+        columna_x,
+        columna_y,
+        cantidad_minima=4,
+    )
+    valores_x = np.linspace(float(x.min()), float(x.max()), cantidad_puntos)
+    nuevos_datos = pd.DataFrame(
+        {
+            "const": np.ones(cantidad_puntos),
+            columna_x: valores_x,
+        }
+    )
+    resumen = modelo.get_prediction(nuevos_datos).summary_frame(
+        alpha=1 - nivel_confianza
+    )
+    return pd.DataFrame(
+        {
+            columna_x: valores_x,
+            "prediccion_puntual": resumen["mean"].to_numpy(dtype=float),
+            "media_inferior": resumen["mean_ci_lower"].to_numpy(dtype=float),
+            "media_superior": resumen["mean_ci_upper"].to_numpy(dtype=float),
+            "individual_inferior": resumen["obs_ci_lower"].to_numpy(dtype=float),
+            "individual_superior": resumen["obs_ci_upper"].to_numpy(dtype=float),
+        }
+    )
+
+
+def calcular_ancho_intervalo(limite_inferior: float, limite_superior: float) -> float:
+    """Calcula el ancho de un intervalo."""
+    return float(limite_superior - limite_inferior)
 
 
 def calcular_intervalo_correlacion_fisher(
@@ -327,6 +435,39 @@ def _ajustar_modelo_ols(
     matriz_x = sm.add_constant(x, has_constant="add")
     modelo = sm.OLS(y, matriz_x).fit()
     return x, y, modelo
+
+
+def _validar_valor_x_operativo(valor_x: float) -> float:
+    """Valida que el valor de X esté dentro del rango operativo."""
+    try:
+        valor = float(valor_x)
+    except (TypeError, ValueError) as error:
+        raise ErrorAnalisisCuantitativo(
+            "La antigüedad ingresada debe ser numérica."
+        ) from error
+
+    if not np.isfinite(valor):
+        raise ErrorAnalisisCuantitativo(
+            "La antigüedad ingresada debe ser finita."
+        )
+
+    if valor < ANTIGUEDAD_MINIMA_MESES or valor > ANTIGUEDAD_MAXIMA_MESES:
+        raise ErrorAnalisisCuantitativo(
+            "La antigüedad debe estar entre "
+            f"{ANTIGUEDAD_MINIMA_MESES} y {ANTIGUEDAD_MAXIMA_MESES} meses."
+        )
+
+    return valor
+
+
+def _construir_exog_prediccion(valor_x: float, columna_x: str) -> pd.DataFrame:
+    """Construye la matriz exógena para una predicción individual."""
+    return pd.DataFrame(
+        {
+            "const": [1.0],
+            columna_x: [valor_x],
+        }
+    )
 
 
 def _clasificar_intensidad_correlacion(magnitud: float) -> str:

@@ -208,3 +208,42 @@
   gráfico de residuos, Q-Q Plot ni histograma de residuos.
 - Escenario: las conclusiones corresponden al escenario poblacional simulado con
   fines académicos.
+
+## Fase P-08: calculadora de predicción
+
+- Enfoque: herramienta técnica de Página 2 para estimar autonomía a partir de
+  una antigüedad de batería ingresada por el analista.
+- Modelo utilizado: el mismo modelo OLS con intercepto empleado en P-05 y P-07.
+  No se ajusta una segunda regresión.
+- Variable de entrada: `Antiguedad_Bateria_Meses`, tratada como valor entero en
+  la interfaz porque la medición se registra en meses completos.
+- Rango operativo de entrada: de 1 a 48 meses. Los valores dentro de ese rango
+  se permiten aunque queden fuera del rango observado en la muestra.
+- Interpolación: ocurre cuando el valor ingresado está entre el mínimo y el
+  máximo observados de X en la muestra activa.
+- Extrapolación: ocurre cuando el valor ingresado está dentro del rango
+  operativo, pero fuera del rango observado. Se permite el cálculo y se muestra
+  una advertencia de cautela.
+- Predicción puntual: corresponde a `b0 + b1 * x0` y no cambia al modificar el
+  nivel de confianza.
+- Intervalo para la media esperada: estima la autonomía promedio esperada de
+  todos los monopatines con antigüedad `x0`.
+- Intervalo de predicción individual: estima la autonomía de un monopatín
+  individual con antigüedad `x0`.
+- Amplitud: el intervalo individual es al menos tan amplio como el intervalo
+  para la media porque combina incertidumbre sobre la media estimada y
+  variabilidad individual alrededor de la recta.
+- Nivel de confianza: al aumentar la confianza, se amplían tanto el intervalo
+  para la media como el intervalo individual; la predicción puntual no cambia.
+- Implementación: se utiliza `modelo.get_prediction(...).summary_frame(alpha=1 -
+  nivel_confianza)` de Statsmodels.
+- Asignación de intervalos: `mean_ci_lower` y `mean_ci_upper` alimentan el
+  intervalo para la media; `obs_ci_lower` y `obs_ci_upper` alimentan el
+  intervalo individual.
+- Límites físicos: no se recortan automáticamente la predicción ni los
+  intervalos al rango operativo 15-45 km. Si un límite queda fuera de ese rango,
+  se informa que el resultado se conserva sin recorte para no alterar el modelo.
+- Alcance pendiente: no se incorporan todavía diagnósticos del modelo ni pruebas
+  adicionales de normalidad u homocedasticidad.
+- Ausencia de causalidad: la calculadora estima valores bajo el modelo lineal,
+  pero no afirma que la antigüedad cause cambios en la autonomía.

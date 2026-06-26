@@ -107,8 +107,8 @@ Incluye:
 - conclusión contextual para el escenario poblacional simulado;
 - evaluación de supuestos y robustez de frecuencias esperadas.
 
-Las herramientas de uso predictivo y los diagnósticos del modelo se
-incorporarán en fases posteriores.
+La calculadora de predicción se presenta más abajo. Los diagnósticos del modelo
+se incorporarán en fases posteriores.
 
 ## Página analista: inferencia cuantitativa
 
@@ -128,4 +128,23 @@ Incluye:
 
 El p-valor no cambia al modificar `α`; solo cambia la decisión. Los intervalos
 se recalculan cuando cambia el nivel de confianza. La página no implementa
-todavía herramientas de uso predictivo ni diagnósticos del modelo.
+todavía diagnósticos del modelo.
+
+## Página analista: calculadora de predicción
+
+La Página 2 incorpora una calculadora técnica para estimar la autonomía a partir
+de una antigüedad de batería ingresada por el analista.
+
+Incluye:
+
+- predicción puntual de autonomía;
+- intervalo de confianza para la autonomía promedio esperada;
+- intervalo de predicción para un monopatín individual;
+- advertencia cuando el valor ingresado implica extrapolación;
+- comparación de amplitudes entre ambos intervalos;
+- gráfico técnico con recta del modelo, bandas y marcador del valor ingresado.
+
+El intervalo individual es más amplio que el intervalo para la media esperada
+porque incorpora la incertidumbre sobre la media y la variabilidad individual
+alrededor de la recta. Los intervalos estadísticos no se recortan al rango
+operativo de la simulación.

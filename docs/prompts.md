@@ -16,6 +16,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-05 | 2026-06-21 | Codex | Módulo cuantitativo gerencial | Implementar el análisis cuantitativo descriptivo y muestral de la Página 1. | Se implementó regresión lineal muestral, Pearson, R², recta de regresión, ecuación e interpretaciones descriptivas. | Compilación Python correcta; `102 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar modulo cuantitativo gerencial`. |
 | P-06 | 2026-06-21 | Codex | Inferencia cualitativa | Implementar la prueba Chi-cuadrado de independencia en la Página 2. | Se implementaron hipótesis, frecuencias esperadas, diferencias relativas, aportes por celda, decisión, conclusión y robustez. | Compilación Python correcta; `127 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar inferencia cualitativa`. |
 | P-07 | 2026-06-26 | Codex | Inferencia cuantitativa | Implementar la prueba t bilateral para la pendiente poblacional y los intervalos de confianza en la Página 2. | Se implementaron inferencia de regresión, decisión, conclusión, IC para β₀/β₁ e intervalo de Fisher para ρ. | Compilación Python correcta; `154 passed` con Pytest. | Propuesto: `feat: agregar inferencia cuantitativa`. |
+| P-08 | 2026-06-26 | Codex | Calculadora de predicción | Implementar la calculadora técnica de autonomía con intervalo para media e intervalo individual. | Se implementó predicción con Statsmodels, extrapolación, amplitudes, gráfico técnico y documentación. | Compilación Python correcta; `175 passed` con Pytest. | Propuesto: `feat: agregar calculadora de prediccion`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -3206,6 +3207,476 @@ No se registraron correcciones humanas durante la implementación de P-07.
 
 ```text
 feat: agregar inferencia cuantitativa
+```
+
+## P-08 — Calculadora de predicción
+
+### Fecha
+
+2026-06-26.
+
+### Herramienta
+
+Codex.
+
+### Etapa
+
+Calculadora de predicción de autonomía.
+
+### Objetivo
+
+Implementar una calculadora técnica que permita ingresar la antigüedad de la
+batería y obtener la autonomía estimada, el intervalo para la media esperada y
+el intervalo de predicción individual, usando el mismo modelo de regresión de
+P-05 y P-07.
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/calculadora-prediccion`.
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma que la rama activa sea `feat/calculadora-prediccion`.
+3. Verifica que el árbol de trabajo esté limpio.
+4. Inspecciona:
+
+   * `src/analisis_cuantitativo.py`
+   * `pages/2_Perfil_Analista.py`
+   * los tests existentes;
+   * la documentación.
+5. Confirma que P-06 y P-07 estén presentes en la Página 2.
+6. Presenta un plan breve.
+7. No realices commit, push, merge ni Pull Request.
+
+# Fase P-08: calculadora de predicción de autonomía
+
+## Objetivo
+
+Implementar una calculadora técnica que permita ingresar un valor de antigüedad de la batería y obtener:
+
+1. La autonomía puntual estimada.
+2. El intervalo de confianza para el valor esperado promedio de autonomía.
+3. El intervalo de predicción para una observación individual.
+
+La calculadora debe utilizar el mismo modelo de regresión ajustado en P-05 y P-07.
+
+No implementes todavía:
+
+* gráfico de residuos;
+* Q-Q Plot;
+* histograma de residuos;
+* pruebas adicionales de normalidad u homocedasticidad.
+
+Estas funciones se incorporarán en fases posteriores.
+
+# Fuente de datos y modelo
+
+Utiliza el DataFrame activo:
+
+`st.session_state["datos_activos"]`
+
+No vuelvas a leer directamente el Excel.
+
+No ajustes un segundo modelo distinto. Reutiliza el ajuste de Statsmodels empleado en la inferencia cuantitativa.
+
+La variable independiente es:
+
+`Antiguedad_Bateria_Meses`
+
+La variable dependiente es:
+
+`Autonomia_Real_Km`
+
+# Nivel de confianza
+
+Reutiliza el nivel de confianza seleccionado para los intervalos de P-07.
+
+Evita crear dos selectores diferentes que puedan producir resultados contradictorios.
+
+El nivel debe variar entre 90 % y 99 %.
+
+Al aumentar la confianza:
+
+* el intervalo para la media debe ampliarse;
+* el intervalo de predicción individual debe ampliarse;
+* la predicción puntual no debe cambiar.
+
+# Entrada del analista
+
+Agrega un campo numérico para ingresar la antigüedad:
+
+* mínimo operativo: 1 mes;
+* máximo operativo: 48 meses;
+* paso: 1;
+* valor inicial razonable, por ejemplo 24 meses;
+* clave única de Streamlit.
+
+La entrada debe considerarse numérica entera porque la variable se registra en meses completos.
+
+También determina dinámicamente:
+
+* mínimo observado de X;
+* máximo observado de X.
+
+Si el valor ingresado está fuera del rango observado de la muestra, pero dentro del rango operativo 1–48, permite calcular la predicción y muestra una advertencia:
+
+> El valor ingresado se encuentra fuera del rango observado en la muestra. La estimación constituye una extrapolación y debe interpretarse con mayor precaución.
+
+No bloquees una extrapolación válida dentro del rango operativo.
+
+# Implementación estadística
+
+Completa `src/analisis_cuantitativo.py` con una estructura equivalente a:
+
+```python
+@dataclass(frozen=True)
+class ResultadoPrediccion:
+    valor_x: float
+    prediccion_puntual: float
+    limite_inferior_media: float
+    limite_superior_media: float
+    limite_inferior_individual: float
+    limite_superior_individual: float
+    nivel_confianza: float
+    es_extrapolacion: bool
+    minimo_x_observado: float
+    maximo_x_observado: float
+```
+
+Implementa funcionalidad equivalente a:
+
+```python
+def calcular_prediccion(
+    datos: pandas.DataFrame,
+    valor_x: float,
+    nivel_confianza: float = 0.95,
+) -> ResultadoPrediccion:
+    ...
+```
+
+Utiliza Statsmodels:
+
+```python
+modelo.get_prediction(nuevos_datos).summary_frame(
+    alpha=1 - nivel_confianza
+)
+```
+
+Extrae correctamente:
+
+* `mean`: predicción puntual;
+* `mean_ci_lower`;
+* `mean_ci_upper`;
+* `obs_ci_lower`;
+* `obs_ci_upper`.
+
+No confundas los nombres ni intercambies ambos intervalos.
+
+# Interpretación de los intervalos
+
+## Intervalo para la media esperada
+
+Debe presentarse como:
+
+> Intervalo de confianza para la autonomía promedio esperada de todos los monopatines con una antigüedad de X meses.
+
+No lo interpretes como un intervalo que contiene un porcentaje de monopatines individuales.
+
+## Intervalo de predicción individual
+
+Debe presentarse como:
+
+> Intervalo de predicción para la autonomía de un monopatín individual con una antigüedad de X meses.
+
+Debe aclararse que es más amplio porque incorpora:
+
+* incertidumbre sobre la media estimada;
+* variabilidad individual alrededor de la recta.
+
+# Condición de amplitud
+
+Debe cumplirse, salvo pequeñas tolerancias numéricas:
+
+```text
+ancho del intervalo individual
+>=
+ancho del intervalo para la media
+```
+
+Implementa funciones auxiliares si ayudan a probar esta condición.
+
+# Límites físicos
+
+No recortes automáticamente los intervalos estadísticos a 15–45 km.
+
+La base simulada utiliza ese rango operativo, pero recortar los intervalos alteraría artificialmente el resultado matemático del modelo.
+
+Si algún límite cae fuera del rango operativo, muestra una nota:
+
+> El intervalo estadístico excede el rango operativo utilizado en la simulación; se presenta sin recorte para conservar el resultado del modelo.
+
+La predicción puntual tampoco debe recortarse silenciosamente.
+
+# Página 2
+
+Conserva íntegramente:
+
+* inferencia cualitativa P-06;
+* prueba de pendiente e intervalos P-07.
+
+Agrega debajo una sección:
+
+## Calculadora de predicción
+
+Debe mostrar:
+
+1. Campo de antigüedad.
+2. Nivel de confianza utilizado.
+3. Predicción puntual.
+4. Intervalo para la media esperada.
+5. Intervalo de predicción individual.
+6. Comparación visual de amplitudes.
+7. Advertencia de extrapolación cuando corresponda.
+8. Explicación de la diferencia entre ambos intervalos.
+9. Nota sobre límites fuera del rango operativo cuando corresponda.
+
+Presenta los resultados en kilómetros con dos decimales, pero conserva la precisión completa internamente.
+
+# Gráfico opcional recomendado
+
+Agrega un gráfico técnico sencillo con:
+
+* eje X: antigüedad;
+* eje Y: autonomía estimada;
+* recta del modelo;
+* banda del intervalo de confianza para la media;
+* banda del intervalo de predicción individual;
+* marcador para el valor ingresado.
+
+Este gráfico es recomendado, pero no debe duplicar ni sustituir los valores numéricos.
+
+Debe utilizar exactamente el mismo modelo y nivel de confianza.
+
+No agregues una segunda regresión.
+
+# Pruebas automatizadas
+
+Agrega pruebas para:
+
+1. Predicción puntual coincidente con (b_0+b_1x_0).
+2. Resultados coincidentes con `get_prediction`.
+3. Intervalo para la media correctamente asignado.
+4. Intervalo individual correctamente asignado.
+5. Intervalo individual más amplio o igual que el intervalo de la media.
+6. La predicción puntual pertenece al intervalo de la media.
+7. La predicción puntual pertenece al intervalo individual.
+8. Los intervalos se amplían al aumentar la confianza.
+9. La predicción puntual no cambia al modificar la confianza.
+10. Detección de valor dentro del rango observado.
+11. Detección de extrapolación inferior.
+12. Detección de extrapolación superior.
+13. Aceptación de valores operativos entre 1 y 48.
+14. Rechazo de valores menores que 1.
+15. Rechazo de valores mayores que 48.
+16. Rechazo de valores no finitos.
+17. Preservación de los intervalos sin recorte.
+18. Resultado del Excel predeterminado para X = 24.
+19. P-06 y P-07 permanecen presentes.
+20. No se implementaron todavía gráficos de diagnóstico.
+21. No aparece lenguaje causal.
+
+No crees pruebas frágiles de detalles internos de Streamlit.
+
+# Resultado esperado aproximado
+
+Para el archivo predeterminado y X = 24:
+
+[
+\hat{Y}
+ =======
+
+## 45.166071
+
+0.552768(24)
+]
+
+La predicción puntual debería ser aproximadamente:
+
+[
+31.90\text{ km}
+]
+
+Los intervalos deben calcularse dinámicamente mediante Statsmodels. No fijes manualmente sus límites.
+
+El intervalo individual debe ser claramente más amplio que el intervalo para la media.
+
+# Documentación
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+Conserva íntegramente P-00 a P-07.
+
+Agrega P-08 con:
+
+* prompt completo;
+* funciones implementadas;
+* diferencias entre ambos intervalos;
+* decisión de no recortar los intervalos;
+* tratamiento de extrapolación;
+* resultados;
+* pruebas;
+* problemas encontrados;
+* commit propuesto.
+
+Documenta:
+
+* diferencia entre estimación puntual e intervalo;
+* intervalo para media esperada;
+* intervalo para observación individual;
+* motivo por el que el segundo es más amplio;
+* efecto del nivel de confianza;
+* diferencia entre interpolación y extrapolación;
+* ausencia de causalidad.
+
+# Archivos esperados
+
+Los cambios deberían concentrarse en:
+
+* `src/analisis_cuantitativo.py`
+* `pages/2_Perfil_Analista.py`
+* `tests/test_analisis_cuantitativo.py`
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+No modifiques carga, simulación ni análisis cualitativo salvo que exista un error real.
+
+# Validaciones finales
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Inicia Streamlit temporalmente:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+Detén el proceso después de comprobarlo.
+
+Ejecuta:
+
+```powershell
+git diff --check
+git status --short
+```
+
+Para el Excel predeterminado y X = 24 reporta:
+
+* predicción puntual;
+* intervalo para la media al 95 %;
+* intervalo individual al 95 %;
+* ancho de ambos intervalos;
+* si es interpolación o extrapolación;
+* advertencias aplicables.
+
+# Informe final
+
+Informa:
+
+1. Plan aplicado.
+2. Archivos creados.
+3. Archivos modificados.
+4. Funciones implementadas.
+5. Resultado para X = 24.
+6. Comparación de intervalos.
+7. Total de pruebas aprobadas.
+8. Resultado de Streamlit.
+9. Confirmación de que P-06 y P-07 continúan funcionando.
+10. Confirmación de que todavía no se implementaron diagnósticos.
+11. Resultado de `git diff --check`.
+12. Estado de Git.
+13. Mensaje de commit propuesto.
+
+No realices commit, push, merge ni Pull Request.
+
+Detente y espera mi revisión.
+````
+
+### Funciones implementadas
+
+- `calcular_prediccion`
+- `construir_bandas_prediccion`
+- `calcular_ancho_intervalo`
+
+### Diferencia entre intervalos
+
+- El intervalo para la media esperada estima la autonomía promedio esperada para
+  monopatines con una antigüedad determinada.
+- El intervalo individual estima la autonomía de un monopatín específico y es
+  más amplio porque incorpora incertidumbre de la media y variabilidad
+  individual alrededor de la recta.
+
+### Decisiones estadísticas
+
+- Se usa `modelo.get_prediction(...).summary_frame(alpha=1 - nivel_confianza)`.
+- La predicción puntual usa `mean`.
+- El intervalo para media usa `mean_ci_lower` y `mean_ci_upper`.
+- El intervalo individual usa `obs_ci_lower` y `obs_ci_upper`.
+- No se recortan predicción ni intervalos al rango operativo 15-45 km.
+- La extrapolación se permite dentro del rango operativo 1-48 meses y se
+  informa con advertencia.
+
+### Resultado
+
+Para el Excel predeterminado, X = 24 y confianza 95 %:
+
+- predicción puntual: 31.899631598222 km;
+- intervalo para la media: [30.864691368214, 32.934571828230];
+- intervalo individual: [24.655952220355, 39.143310976089];
+- ancho del intervalo para la media: 2.069880460016 km;
+- ancho del intervalo individual: 14.487358755734 km;
+- rango observado de X: 2 a 47 meses;
+- X = 24 es interpolación;
+- no aplica advertencia de extrapolación ni de límites fuera del rango operativo.
+
+### Problemas encontrados
+
+- Una prueba textual esperaba "Intervalo de predicción" en singular, pero la
+  página usa el título "Intervalos de predicción". Se corrigió la prueba para
+  reflejar el texto real.
+
+### Correcciones humanas
+
+No se registraron correcciones humanas durante la implementación de P-08.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- Inicio temporal de Streamlit en `http://127.0.0.1:8765`
+- `git diff --check`
+- `git status --short`
+
+### Commit propuesto
+
+```text
+feat: agregar calculadora de prediccion
 ```
 
 ## Plantilla para próximos registros

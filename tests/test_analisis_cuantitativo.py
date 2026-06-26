@@ -11,8 +11,11 @@ from src.analisis_cuantitativo import (
     ErrorAnalisisCuantitativo,
     ajustar_regresion_lineal,
     ajustar_inferencia_regresion,
+    calcular_ancho_intervalo,
     calcular_intervalo_correlacion_fisher,
+    calcular_prediccion,
     concluir_prueba_pendiente,
+    construir_bandas_prediccion,
     construir_datos_recta_regresion,
     decidir_prueba_pendiente,
     formatear_ecuacion_regresion,
@@ -345,6 +348,22 @@ def _ajustar_statsmodels(datos: pd.DataFrame):
     return sm.OLS(y, matriz_x).fit()
 
 
+def _resumen_prediccion_statsmodels(
+    datos: pd.DataFrame,
+    valor_x: float,
+    nivel_confianza: float = 0.95,
+) -> pd.Series:
+    """Obtiene la fila de predicción de Statsmodels para comparar resultados."""
+    modelo = _ajustar_statsmodels(datos)
+    nuevos_datos = pd.DataFrame(
+        {"const": [1.0], VARIABLE_ANTIGUEDAD_BATERIA: [valor_x]}
+    )
+    resumen = modelo.get_prediction(nuevos_datos).summary_frame(
+        alpha=1 - nivel_confianza
+    )
+    return resumen.iloc[0]
+
+
 def test_inferencia_grados_libertad_son_n_menos_dos() -> None:
     """En regresión simple con intercepto, gl = n - 2."""
     datos = _datos_no_perfectos()
@@ -574,17 +593,15 @@ def test_p04_y_p05_siguen_funcionando_en_pagina_gerencial() -> None:
     assert "ajustar_regresion_lineal" in contenido
 
 
-def test_pagina_analista_no_muestra_herramientas_pendientes() -> None:
-    """Página 2 no implementa todavía herramientas de fases posteriores."""
+def test_pagina_analista_no_muestra_diagnosticos_pendientes() -> None:
+    """Página 2 no implementa todavía gráficos de diagnóstico."""
     contenido = Path("pages/2_Perfil_Analista.py").read_text(
         encoding="utf-8"
     ).lower()
     frases_pendientes = (
         "q-q plot",
         "histograma de residuos",
-        "intervalo de predicción individual",
-        "intervalo para la media esperada",
-        "calculadora de predicción",
+        "gráfico de residuos",
     )
 
     for frase in frases_pendientes:
@@ -599,3 +616,238 @@ def test_pagina_analista_no_contiene_lenguaje_causal() -> None:
 
     assert "causa" not in contenido
     assert "causal" not in contenido
+
+
+def test_prediccion_puntual_coincide_con_ecuacion() -> None:
+    """La predicción puntual coincide con b0 + b1 * x0."""
+    datos = _datos_no_perfectos()
+    resultado = ajustar_inferencia_regresion(datos)
+    prediccion = calcular_prediccion(datos, 12)
+    esperado = resultado.intercepto + resultado.pendiente * 12
+
+    assert prediccion.prediccion_puntual == pytest.approx(esperado)
+
+
+def test_prediccion_coincide_con_get_prediction() -> None:
+    """El resultado completo coincide con Statsmodels get_prediction."""
+    datos = _datos_no_perfectos()
+    prediccion = calcular_prediccion(datos, 12, nivel_confianza=0.95)
+    esperado = _resumen_prediccion_statsmodels(datos, 12, nivel_confianza=0.95)
+
+    assert prediccion.prediccion_puntual == pytest.approx(esperado["mean"])
+    assert prediccion.limite_inferior_media == pytest.approx(
+        esperado["mean_ci_lower"]
+    )
+    assert prediccion.limite_superior_media == pytest.approx(
+        esperado["mean_ci_upper"]
+    )
+    assert prediccion.limite_inferior_individual == pytest.approx(
+        esperado["obs_ci_lower"]
+    )
+    assert prediccion.limite_superior_individual == pytest.approx(
+        esperado["obs_ci_upper"]
+    )
+
+
+def test_intervalo_para_media_correctamente_asignado() -> None:
+    """El intervalo para media usa columnas mean_ci de Statsmodels."""
+    datos = _datos_no_perfectos()
+    prediccion = calcular_prediccion(datos, 12)
+    esperado = _resumen_prediccion_statsmodels(datos, 12)
+
+    assert prediccion.limite_inferior_media == pytest.approx(
+        esperado["mean_ci_lower"]
+    )
+    assert prediccion.limite_superior_media == pytest.approx(
+        esperado["mean_ci_upper"]
+    )
+
+
+def test_intervalo_individual_correctamente_asignado() -> None:
+    """El intervalo individual usa columnas obs_ci de Statsmodels."""
+    datos = _datos_no_perfectos()
+    prediccion = calcular_prediccion(datos, 12)
+    esperado = _resumen_prediccion_statsmodels(datos, 12)
+
+    assert prediccion.limite_inferior_individual == pytest.approx(
+        esperado["obs_ci_lower"]
+    )
+    assert prediccion.limite_superior_individual == pytest.approx(
+        esperado["obs_ci_upper"]
+    )
+
+
+def test_intervalo_individual_mas_amplio_o_igual_que_media() -> None:
+    """El intervalo individual no debe ser más angosto que el de la media."""
+    prediccion = calcular_prediccion(_datos_no_perfectos(), 12)
+    ancho_media = calcular_ancho_intervalo(
+        prediccion.limite_inferior_media,
+        prediccion.limite_superior_media,
+    )
+    ancho_individual = calcular_ancho_intervalo(
+        prediccion.limite_inferior_individual,
+        prediccion.limite_superior_individual,
+    )
+
+    assert ancho_individual >= ancho_media
+
+
+def test_prediccion_puntual_pertenece_al_intervalo_media() -> None:
+    """La estimación puntual queda dentro del intervalo para la media."""
+    prediccion = calcular_prediccion(_datos_no_perfectos(), 12)
+
+    assert (
+        prediccion.limite_inferior_media
+        <= prediccion.prediccion_puntual
+        <= prediccion.limite_superior_media
+    )
+
+
+def test_prediccion_puntual_pertenece_al_intervalo_individual() -> None:
+    """La estimación puntual queda dentro del intervalo individual."""
+    prediccion = calcular_prediccion(_datos_no_perfectos(), 12)
+
+    assert (
+        prediccion.limite_inferior_individual
+        <= prediccion.prediccion_puntual
+        <= prediccion.limite_superior_individual
+    )
+
+
+def test_intervalos_de_prediccion_se_amplian_con_confianza() -> None:
+    """Los intervalos de media e individual se amplían con mayor confianza."""
+    datos = _datos_no_perfectos()
+    prediccion_90 = calcular_prediccion(datos, 12, nivel_confianza=0.90)
+    prediccion_99 = calcular_prediccion(datos, 12, nivel_confianza=0.99)
+    ancho_media_90 = calcular_ancho_intervalo(
+        prediccion_90.limite_inferior_media,
+        prediccion_90.limite_superior_media,
+    )
+    ancho_media_99 = calcular_ancho_intervalo(
+        prediccion_99.limite_inferior_media,
+        prediccion_99.limite_superior_media,
+    )
+    ancho_individual_90 = calcular_ancho_intervalo(
+        prediccion_90.limite_inferior_individual,
+        prediccion_90.limite_superior_individual,
+    )
+    ancho_individual_99 = calcular_ancho_intervalo(
+        prediccion_99.limite_inferior_individual,
+        prediccion_99.limite_superior_individual,
+    )
+
+    assert ancho_media_99 > ancho_media_90
+    assert ancho_individual_99 > ancho_individual_90
+
+
+def test_prediccion_puntual_no_cambia_con_confianza() -> None:
+    """La confianza cambia intervalos, no la predicción puntual."""
+    datos = _datos_no_perfectos()
+    prediccion_90 = calcular_prediccion(datos, 12, nivel_confianza=0.90)
+    prediccion_99 = calcular_prediccion(datos, 12, nivel_confianza=0.99)
+
+    assert prediccion_99.prediccion_puntual == pytest.approx(
+        prediccion_90.prediccion_puntual
+    )
+
+
+def test_prediccion_detecta_valor_dentro_del_rango_observado() -> None:
+    """Un valor entre mínimo y máximo observados no es extrapolación."""
+    prediccion = calcular_prediccion(_datos_no_perfectos(), 12)
+
+    assert prediccion.es_extrapolacion is False
+
+
+def test_prediccion_detecta_extrapolacion_inferior() -> None:
+    """Un valor menor al mínimo observado es extrapolación."""
+    prediccion = calcular_prediccion(_datos_no_perfectos(), 1)
+
+    assert prediccion.es_extrapolacion is True
+
+
+def test_prediccion_detecta_extrapolacion_superior() -> None:
+    """Un valor mayor al máximo observado es extrapolación."""
+    prediccion = calcular_prediccion(_datos_no_perfectos(), 48)
+
+    assert prediccion.es_extrapolacion is True
+
+
+def test_prediccion_acepta_valores_operativos_entre_uno_y_cuarenta_y_ocho() -> None:
+    """Los extremos operativos 1 y 48 se aceptan aunque sean extrapolación."""
+    prediccion_minima = calcular_prediccion(_datos_no_perfectos(), 1)
+    prediccion_maxima = calcular_prediccion(_datos_no_perfectos(), 48)
+
+    assert prediccion_minima.valor_x == 1
+    assert prediccion_maxima.valor_x == 48
+
+
+def test_prediccion_rechaza_valor_menor_que_uno() -> None:
+    """La antigüedad menor que 1 está fuera del rango operativo."""
+    with pytest.raises(ErrorAnalisisCuantitativo, match="entre 1 y 48"):
+        calcular_prediccion(_datos_no_perfectos(), 0)
+
+
+def test_prediccion_rechaza_valor_mayor_que_cuarenta_y_ocho() -> None:
+    """La antigüedad mayor que 48 está fuera del rango operativo."""
+    with pytest.raises(ErrorAnalisisCuantitativo, match="entre 1 y 48"):
+        calcular_prediccion(_datos_no_perfectos(), 49)
+
+
+def test_prediccion_rechaza_valor_no_finito() -> None:
+    """La antigüedad debe ser finita."""
+    with pytest.raises(ErrorAnalisisCuantitativo, match="finita"):
+        calcular_prediccion(_datos_no_perfectos(), np.inf)
+
+
+def test_prediccion_preserva_intervalos_sin_recorte() -> None:
+    """Los intervalos estadísticos no se recortan al rango operativo."""
+    datos = cargar_archivo_semanal(
+        Path("data/volt_ar_semana_01.xlsx"),
+        "volt_ar_semana_01.xlsx",
+    )
+    prediccion = calcular_prediccion(datos, 48)
+
+    assert prediccion.limite_inferior_individual < 15
+
+
+def test_prediccion_excel_predeterminado_x_24() -> None:
+    """El Excel predeterminado produce predicción aproximada para X = 24."""
+    datos = cargar_archivo_semanal(
+        Path("data/volt_ar_semana_01.xlsx"),
+        "volt_ar_semana_01.xlsx",
+    )
+    prediccion = calcular_prediccion(datos, 24)
+
+    assert prediccion.prediccion_puntual == pytest.approx(31.90, abs=0.01)
+    assert prediccion.es_extrapolacion is False
+
+
+def test_p06_y_p07_permanecen_presentes_en_pagina_analista() -> None:
+    """La calculadora no elimina las secciones inferenciales previas."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
+
+    assert "Inferencia cualitativa" in contenido
+    assert "Inferencia cuantitativa" in contenido
+    assert "Resultado de la prueba t bilateral" in contenido
+
+
+def test_pagina_analista_contiene_calculadora_prediccion() -> None:
+    """La Página 2 incorpora la calculadora de predicción P-08."""
+    contenido = Path("pages/2_Perfil_Analista.py").read_text(encoding="utf-8")
+
+    assert "Calculadora de predicción" in contenido
+    assert "Intervalos de predicción" in contenido
+
+
+def test_bandas_de_prediccion_usan_modelo_y_confianza() -> None:
+    """Las bandas del gráfico incluyen recta, media e intervalo individual."""
+    bandas = construir_bandas_prediccion(
+        _datos_no_perfectos(),
+        nivel_confianza=0.95,
+        cantidad_puntos=5,
+    )
+
+    assert len(bandas) == 5
+    assert "prediccion_puntual" in bandas.columns
+    assert "media_inferior" in bandas.columns
+    assert "individual_inferior" in bandas.columns
