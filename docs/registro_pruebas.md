@@ -163,6 +163,52 @@ Validación de sintaxis ejecutada:
 Sin errores.
 ```
 
+## Fase P-07: inferencia cuantitativa
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P07-T01 | Verificar grados de libertad. | DataFrame controlado. | `gl = n - 2`. | Coincidencia. | Aprobada | Regresión simple con intercepto. |
+| P07-T02 | Verificar estadístico t. | Resultado inferencial. | `t = b1 / SE(b1)`. | Coincidencia. | Aprobada | Control matemático. |
+| P07-T03 | Comparar t con fórmula basada en Pearson. | Datos no perfectos. | Coincidencia. | Coincidencia. | Aprobada | Equivalencia en regresión simple. |
+| P07-T04 | Verificar rango del p-valor. | Datos no perfectos. | Entre 0 y 1. | Dentro de rango. | Aprobada | P-valor bilateral. |
+| P07-T05 | Comparar p-valor con Statsmodels. | Mismo modelo OLS. | Coincidencia. | Coincidencia. | Aprobada | Statsmodels como fuente principal. |
+| P07-T06 | Decidir rechazo. | p 0.01, α 0.05. | Se rechaza H0. | Se rechaza H0. | Aprobada | Regla `p < α`. |
+| P07-T07 | Decidir no rechazo. | p 0.08 y p 0.05 con α 0.05. | No se rechaza H0. | No se rechaza H0. | Aprobada | Regla `p >= α`. |
+| P07-T08 | Evitar "aceptar H0". | Texto de decisión. | No contiene aceptar. | No contiene aceptar. | Aprobada | Respeta consigna. |
+| P07-T09 | Conclusión contextual negativa. | Pendiente negativa. | Relación lineal negativa. | Texto correcto. | Aprobada | Escenario simulado. |
+| P07-T10 | Conclusión contextual positiva. | Pendiente positiva. | Relación lineal positiva. | Texto correcto. | Aprobada | Sentido dinámico. |
+| P07-T11 | Conclusión de no rechazo. | p 0.20. | No afirma evidencia suficiente. | Texto correcto. | Aprobada | No acepta H0. |
+| P07-T12 | Comparar IC de pendiente con Statsmodels. | 95 %. | Coincidencia. | Coincidencia. | Aprobada | `conf_int`. |
+| P07-T13 | Comparar IC de intercepto con Statsmodels. | 95 %. | Coincidencia. | Coincidencia. | Aprobada | `conf_int`. |
+| P07-T14 | Verificar ampliación de intervalos. | 90 % y 99 %. | 99 % más ancho. | Más ancho. | Aprobada | Mayor confianza. |
+| P07-T15 | Verificar estimadores constantes. | 90 % y 99 %. | Estimadores y p-valor iguales. | Iguales. | Aprobada | Solo cambian límites. |
+| P07-T16 | Confirmar p-valor independiente de α. | α 0.01 y 0.10. | p-valor sin cambios. | Sin cambios. | Aprobada | Solo cambia decisión. |
+| P07-T17 | Validar límites de Fisher. | Datos no perfectos. | Intervalo dentro de [-1, 1]. | Dentro de rango. | Aprobada | Aproximación de Fisher. |
+| P07-T18 | Verificar que Fisher contiene r. | Datos no perfectos. | r dentro del intervalo. | Contenido. | Aprobada | Control de consistencia. |
+| P07-T19 | Manejar `n <= 3`. | Tres observaciones. | Error comprensible. | Error comprensible. | Aprobada | Inferencia requiere al menos cuatro. |
+| P07-T20 | Manejar correlación perfecta. | r = ±1. | Fisher no calculable. | `None`. | Aprobada | Resultado controlado. |
+| P07-T21 | Error con X constante. | DataFrame controlado. | Error comprensible. | Error comprensible. | Aprobada | Sin variabilidad. |
+| P07-T22 | Error con Y constante. | DataFrame controlado. | Error comprensible. | Error comprensible. | Aprobada | Sin variabilidad. |
+| P07-T23 | Validar Excel predeterminado. | `data/volt_ar_semana_01.xlsx`. | n 48, gl 46, t -14.0468, p 2.97e-18. | Coincidencia. | Aprobada | Reproduce P-07 esperado. |
+| P07-T24 | Confirmar P-06 presente. | `pages/2_Perfil_Analista.py`. | Inferencia cualitativa conservada. | Conservada. | Aprobada | No se elimina P-06. |
+| P07-T25 | Confirmar P-04 y P-05 presentes. | `pages/1_Perfil_Gerencial.py`. | Módulos gerenciales conservados. | Conservados. | Aprobada | Sin cambios funcionales. |
+| P07-T26 | Confirmar herramientas pendientes ausentes. | `pages/2_Perfil_Analista.py`. | Sin Q-Q, histograma, predicción individual ni calculadora. | Ausentes. | Aprobada | Fases posteriores. |
+| P07-T27 | Confirmar ausencia de lenguaje causal. | `pages/2_Perfil_Analista.py`. | No contiene lenguaje causal. | Aprobada. | Aprobada | Se habla de relación lineal. |
+
+Validación automatizada ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+154 passed
+```
+
+Validación de sintaxis ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+Sin errores.
+```
+
 Validación temporal de Streamlit:
 
 ```text

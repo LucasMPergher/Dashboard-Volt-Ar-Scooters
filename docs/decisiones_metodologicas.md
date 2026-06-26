@@ -168,3 +168,43 @@
   mayor o igual que 5.
 - Si no se cumplen los criterios de robustez, el cálculo no se bloquea, pero la
   interfaz advierte que la aproximación debe interpretarse con precaución.
+
+## Fase P-07: inferencia cuantitativa
+
+- Enfoque de la Página 2: inferencial y poblacional para la relación lineal
+  entre `Antiguedad_Bateria_Meses` y `Autonomia_Real_Km`.
+- Modelo poblacional: `Y = β₀ + β₁X + ε`, con intercepto poblacional `β₀` y
+  pendiente poblacional `β₁`.
+- Pendiente muestral y poblacional: la pendiente estimada `b₁` resume la muestra
+  activa; la prueba evalúa si la pendiente poblacional `β₁` puede considerarse
+  distinta de cero.
+- Prueba de hipótesis: bilateral, con `H0: β₁ = 0` y `H1: β₁ != 0`.
+- Estadístico t: se calcula como `b₁ / SE(b₁)` usando la salida de
+  `statsmodels`. Se verifica también la equivalencia
+  `t = r * sqrt(n - 2) / sqrt(1 - r^2)` en regresión lineal simple.
+- Grados de libertad: `gl = n - 2`, porque se estiman intercepto y pendiente.
+- Relación con la correlación: en regresión lineal simple con intercepto, la
+  prueba para `β₁ = 0` es equivalente a la prueba para correlación lineal nula.
+- Nivel de significancia: `α` controla la regla de decisión. El p-valor se
+  calcula desde el modelo y no cambia al modificar `α`.
+- Regla de decisión: si `p < α`, se rechaza H0; si `p >= α`, no se rechaza H0.
+  No se utiliza la expresión "se acepta H0".
+- Conclusión contextual: se informa evidencia de relación lineal poblacional
+  positiva o negativa según el signo de la pendiente. No se afirma causalidad.
+- Nivel de confianza: controla únicamente los límites de los intervalos de
+  confianza para `β₀`, `β₁` y `ρ`; no modifica estimadores, estadístico t ni
+  p-valor.
+- Intervalos: al aumentar el nivel de confianza, los intervalos se amplían
+  porque se utiliza un valor crítico más exigente.
+- Intervalos de parámetros: se calculan con `modelo.conf_int(alpha=1 -
+  nivel_confianza)`.
+- Intervalo de correlación: se calcula como complemento mediante la
+  aproximación de Fisher, usando `atanh(r)`, `1 / sqrt(n - 3)` y transformación
+  inversa con `tanh`.
+- Intervalo de Fisher: solo se calcula con `n > 3` y correlación no perfecta. Si
+  `r = 1` o `r = -1`, se informa de forma controlada que no se calcula.
+- Alcance pendiente: no se implementan todavía calculadora de predicción,
+  intervalos para la media esperada de Y, intervalos de predicción individual,
+  gráfico de residuos, Q-Q Plot ni histograma de residuos.
+- Escenario: las conclusiones corresponden al escenario poblacional simulado con
+  fines académicos.

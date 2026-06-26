@@ -107,5 +107,25 @@ Incluye:
 - conclusión contextual para el escenario poblacional simulado;
 - evaluación de supuestos y robustez de frecuencias esperadas.
 
-La inferencia cuantitativa, los intervalos, la predicción y los gráficos de
-residuos se incorporarán en fases posteriores.
+Las herramientas de uso predictivo y los diagnósticos del modelo se
+incorporarán en fases posteriores.
+
+## Página analista: inferencia cuantitativa
+
+La Página 2 incorpora la prueba bilateral para la pendiente poblacional de la
+regresión lineal simple entre `Antiguedad_Bateria_Meses` y `Autonomia_Real_Km`.
+
+Incluye:
+
+- modelo poblacional `Y = β₀ + β₁X + ε`;
+- hipótesis `H₀: β₁ = 0` y `H₁: β₁ ≠ 0`;
+- pendiente estimada, error estándar, estadístico t, grados de libertad y
+  p-valor;
+- selector de nivel de significancia para actualizar la decisión;
+- conclusión contextual para el escenario poblacional simulado;
+- intervalos de confianza dinámicos para `β₀` y `β₁`;
+- intervalo para `ρ` mediante la aproximación de Fisher.
+
+El p-valor no cambia al modificar `α`; solo cambia la decisión. Los intervalos
+se recalculan cuando cambia el nivel de confianza. La página no implementa
+todavía herramientas de uso predictivo ni diagnósticos del modelo.

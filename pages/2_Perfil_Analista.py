@@ -1,5 +1,6 @@
 """Página analista del dashboard."""
 
+import pandas as pd
 import streamlit as st
 
 from src.analisis_cualitativo import (
@@ -15,6 +16,13 @@ from src.analisis_cualitativo import (
     evaluar_robustez_chi_cuadrado,
     identificar_categorias_excluidas,
 )
+from src.analisis_cuantitativo import (
+    ErrorAnalisisCuantitativo,
+    ajustar_inferencia_regresion,
+    concluir_prueba_pendiente,
+    decidir_prueba_pendiente,
+)
+from src.config import VARIABLE_ANTIGUEDAD_BATERIA, VARIABLE_AUTONOMIA_REAL
 from src.interfaz_carga import (
     CLAVE_NOMBRE_ARCHIVO_ACTIVO,
     mostrar_carga_datos,
@@ -43,8 +51,9 @@ st.write(
     "relación poblacional entre la sucursal y el nivel de fallos técnicos."
 )
 st.info(
-    "La inferencia cuantitativa, los intervalos, la predicción y los gráficos "
-    "de residuos se incorporarán en una fase posterior."
+    "La inferencia cuantitativa se presenta más abajo. Las herramientas para "
+    "uso predictivo y los diagnósticos del modelo se incorporarán en una fase "
+    "posterior."
 )
 
 st.subheader("Hipótesis")
@@ -197,6 +206,155 @@ else:
 
 st.header("Inferencia cuantitativa")
 st.write(
-    "La inferencia cuantitativa sobre las variables numéricas se completará "
-    "en las próximas fases según corresponda."
+    "Se evalúa la pendiente poblacional de una regresión lineal simple entre "
+    "la antigüedad de la batería y la autonomía real."
 )
+
+st.subheader("Modelo poblacional")
+st.latex(r"Y = \beta_0 + \beta_1 X + \varepsilon")
+st.write(
+    f"Variable X: `{VARIABLE_ANTIGUEDAD_BATERIA}`. "
+    f"Variable Y: `{VARIABLE_AUTONOMIA_REAL}`."
+)
+
+st.subheader("Hipótesis para la pendiente")
+st.markdown(
+    """
+**H₀:** β₁ = 0. No existe relación lineal poblacional entre antigüedad y
+autonomía.
+
+**H₁:** β₁ ≠ 0. Existe una relación lineal poblacional entre antigüedad y
+autonomía.
+"""
+)
+
+alpha_cuantitativo = st.slider(
+    "Nivel de significancia para la pendiente (α)",
+    min_value=0.01,
+    max_value=0.10,
+    value=0.05,
+    step=0.01,
+    key="alpha_inferencia_cuantitativa",
+)
+nivel_confianza_porcentaje = st.slider(
+    "Nivel de confianza para intervalos",
+    min_value=90,
+    max_value=99,
+    value=95,
+    step=1,
+    key="nivel_confianza_regresion",
+)
+nivel_confianza = nivel_confianza_porcentaje / 100
+
+try:
+    resultado_regresion = ajustar_inferencia_regresion(
+        datos_activos,
+        nivel_confianza=nivel_confianza,
+    )
+except ErrorAnalisisCuantitativo as error:
+    st.warning(str(error))
+else:
+    st.subheader("Resultado de la prueba t bilateral")
+    columna_1, columna_2, columna_3, columna_4 = st.columns(4)
+    columna_1.metric("n", resultado_regresion.cantidad)
+    columna_2.metric("gl", resultado_regresion.grados_libertad)
+    columna_3.metric("Pendiente", f"{resultado_regresion.pendiente:.6f}")
+    columna_4.metric(
+        "SE pendiente",
+        f"{resultado_regresion.error_estandar_pendiente:.6f}",
+    )
+
+    columna_1, columna_2, columna_3, columna_4 = st.columns(4)
+    columna_1.metric("t", f"{resultado_regresion.estadistico_t_pendiente:.6f}")
+    columna_2.metric("p-valor", f"{resultado_regresion.p_valor_pendiente:.6g}")
+    columna_3.metric("Pearson", f"{resultado_regresion.coeficiente_pearson:.6f}")
+    columna_4.metric("R²", f"{resultado_regresion.coeficiente_determinacion:.6f}")
+
+    decision_pendiente = decidir_prueba_pendiente(
+        resultado_regresion.p_valor_pendiente,
+        alpha_cuantitativo,
+    )
+    st.write(f"**Decisión:** {decision_pendiente}")
+    st.write(
+        concluir_prueba_pendiente(
+            resultado_regresion.p_valor_pendiente,
+            alpha_cuantitativo,
+            resultado_regresion.pendiente,
+        )
+    )
+    st.caption(
+        "El p-valor se calcula con el modelo ajustado; modificar α solo "
+        "actualiza la regla de decisión."
+    )
+
+    st.subheader("Intervalos de confianza para los parámetros")
+    intervalos_parametros = pd.DataFrame(
+        [
+            {
+                "Parámetro": "β₀",
+                "Estimación": resultado_regresion.intercepto,
+                "Límite inferior": resultado_regresion.intervalo_intercepto[0],
+                "Límite superior": resultado_regresion.intervalo_intercepto[1],
+                "Confianza": f"{nivel_confianza_porcentaje} %",
+            },
+            {
+                "Parámetro": "β₁",
+                "Estimación": resultado_regresion.pendiente,
+                "Límite inferior": resultado_regresion.intervalo_pendiente[0],
+                "Límite superior": resultado_regresion.intervalo_pendiente[1],
+                "Confianza": f"{nivel_confianza_porcentaje} %",
+            },
+        ]
+    )
+    st.dataframe(
+        intervalos_parametros,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    limite_inferior_pendiente, limite_superior_pendiente = (
+        resultado_regresion.intervalo_pendiente
+    )
+    if limite_inferior_pendiente <= 0 <= limite_superior_pendiente:
+        st.info(
+            "El intervalo de la pendiente contiene cero; esto es coherente con "
+            "no rechazar H₀ al nivel equivalente."
+        )
+    else:
+        st.info(
+            "El intervalo de la pendiente no contiene cero; esto es coherente "
+            "con rechazar H₀ al nivel equivalente."
+        )
+    st.caption(
+        "El intervalo y el p-valor son procedimientos equivalentes bajo las "
+        "mismas condiciones, pero se presentan por separado."
+    )
+
+    st.subheader("Intervalo para ρ")
+    if resultado_regresion.intervalo_correlacion is None:
+        st.warning(
+            "No se calcula el intervalo de Fisher para ρ cuando n <= 3 o cuando "
+            "la correlación es perfecta."
+        )
+    else:
+        intervalo_rho = pd.DataFrame(
+            [
+                {
+                    "Coeficiente": "ρ",
+                    "Estimación r": resultado_regresion.coeficiente_pearson,
+                    "Límite inferior": resultado_regresion.intervalo_correlacion[0],
+                    "Límite superior": resultado_regresion.intervalo_correlacion[1],
+                    "Método": "Aproximación de Fisher",
+                }
+            ]
+        )
+        st.dataframe(
+            intervalo_rho,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    st.info(
+        "Las herramientas para uso predictivo y los diagnósticos del modelo se "
+        "incorporarán en fases posteriores."
+    )
