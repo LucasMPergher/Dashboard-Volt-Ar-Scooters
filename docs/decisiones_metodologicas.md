@@ -298,3 +298,40 @@
 - Luego de la corrección aprobaron 204 pruebas.
 - Se navegó explícitamente a `Perfil Analista` y el gráfico de residuos se
   renderizó sin `NameError`.
+
+## Fase P-10: integración final y control de requisitos
+
+- Objetivo: revisar el dashboard completo como sistema integrado, sin incorporar
+  nuevos métodos estadísticos.
+- Alcance: integración entre carga, validación, simulación, Página 1, Página 2,
+  análisis cualitativo, análisis cuantitativo, predicción, diagnóstico,
+  documentación y pruebas automatizadas.
+- Fuente de datos: se mantiene `st.session_state["datos_activos"]` como punto
+  único para las páginas. Las páginas no leen directamente archivos Excel o CSV.
+- Vista previa: `head()` se utiliza únicamente en `src/interfaz_carga.py` para
+  mostrar hasta 10 filas. Los análisis usan siempre el DataFrame completo.
+- Consistencia cualitativa: Página 1 y Página 2 usan la misma tabla observada y
+  el mismo cálculo de Chi-cuadrado.
+- Consistencia cuantitativa: descripción, inferencia, calculadora y diagnóstico
+  reutilizan el mismo modelo OLS con intercepto.
+- Niveles dinámicos: el nivel de significancia modifica reglas de decisión, pero
+  no p-valores. El nivel de confianza modifica límites de intervalos, pero no
+  estimadores puntuales.
+- Semanas revisadas: se probaron tres matrices válidas de 48 observaciones con
+  semillas 42, 7 y 123. Los resultados estadísticos cambiaron al cambiar la
+  matriz y se restauraron al volver a la semana predeterminada.
+- Archivos inválidos: se verificó rechazo de columnas faltantes, adicionales,
+  `Unnamed`, cantidades fuera de rango, categorías desconocidas, nulos,
+  infinitos, valores numéricos fuera de rango, Excel sin hoja `datos`, CSV
+  inválido, extensión no permitida y archivo vacío.
+- Navegación real: se considera insuficiente que Streamlit solo inicie. La fase
+  exige navegar Página principal, Perfil Gerencial y Perfil Analista para
+  ejecutar secciones concretas y expanders.
+- Corrección menor de integración: la portada y una nota de Página 1 conservaban
+  redacción de fases anteriores en futuro. Se actualizaron a la situación final
+  sin cambiar cálculos ni diseño funcional.
+- Matriz de cumplimiento: se agrega `docs/matriz_cumplimiento.md` para vincular
+  requisitos oficiales, implementación, archivos, pruebas y estado.
+- Limitación: la validación automatizada cubre consistencia técnica, pero la
+  aceptación académica final requiere revisión humana de interpretación y
+  redacción.

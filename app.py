@@ -28,13 +28,14 @@ st.write(
 
 st.subheader("2. Perfil Analista")
 st.write(
-    "Página con enfoque inferencial y poblacional destinada a incorporar, en "
-    "fases posteriores, pruebas estadísticas y modelos cuantitativos."
+    "Página con enfoque inferencial y poblacional que reúne pruebas "
+    "estadísticas, predicción y diagnóstico técnico del modelo cuantitativo."
 )
 
 st.info(
-    "Los módulos estadísticos completos se implementarán en fases posteriores. "
-    "Esta versión solo prepara la estructura inicial del proyecto."
+    "La aplicación trabaja con el archivo semanal activo y actualiza los "
+    "módulos descriptivos, inferenciales, predictivos y diagnósticos al cargar "
+    "una matriz válida."
 )
 
 mostrar_carga_datos()

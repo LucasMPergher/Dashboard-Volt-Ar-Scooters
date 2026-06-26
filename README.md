@@ -3,6 +3,51 @@
 Dashboard académico de Estadística II para analizar semanalmente monopatines
 eléctricos de Volt-Ar Scooters.
 
+## Objetivos
+
+- Integrar una carga semanal de datos de monopatines eléctricos.
+- Presentar un perfil gerencial descriptivo y muestral.
+- Presentar un perfil analista con inferencia, predicción y diagnóstico técnico.
+- Mantener separados los resultados muestrales de las conclusiones
+  poblacionales simuladas.
+- Documentar el uso de inteligencia artificial y la validación humana.
+
+## Variables analizadas
+
+El dashboard trabaja exactamente con cuatro variables estadísticas:
+
+| Variable | Tipo | Escala | Rol |
+| --- | --- | --- | --- |
+| `Sucursal` | Cualitativa | Nominal | Sede Rosario o Córdoba. |
+| `Nivel_Fallos` | Cualitativa | Ordinal | Nivel Bajo, Medio o Alto. |
+| `Antiguedad_Bateria_Meses` | Cuantitativa | Razón | Variable independiente X. |
+| `Autonomia_Real_Km` | Cuantitativa | Razón | Variable dependiente Y. |
+
+`ID_Monopatin` puede existir como identificador externo, pero no forma parte de
+las cuatro variables estadísticas del proyecto.
+
+## Requisitos de Python
+
+Se recomienda usar Python 3.11 o superior y un entorno virtual local.
+
+Crear el entorno:
+
+```powershell
+python -m venv .venv
+```
+
+Activarlo en PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Instalar dependencias:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
 ## Generar datos semanales simulados
 
 La fase P-02 incorpora un generador reproducible de datos semanales. Para crear
@@ -55,6 +100,27 @@ Reglas principales de carga:
 
 Mientras no se cargue otro archivo válido, la aplicación utiliza
 `data/volt_ar_semana_01.xlsx` como archivo predeterminado.
+
+## Formato esperado de Excel y CSV
+
+Los archivos deben contener exactamente estas columnas, aunque la validación
+puede reordenarlas al orden canónico:
+
+```text
+Sucursal,Nivel_Fallos,Antiguedad_Bateria_Meses,Autonomia_Real_Km
+```
+
+Reglas principales:
+
+- `Sucursal`: Rosario o Córdoba.
+- `Nivel_Fallos`: Bajo, Medio o Alto.
+- `Antiguedad_Bateria_Meses`: entero de 1 a 48.
+- `Autonomia_Real_Km`: número de 15 a 45.
+- Cantidad de observaciones: entre 30 y 60.
+- Excel: hoja obligatoria `datos`.
+- CSV: UTF-8, separado por coma o punto y coma.
+- No se admiten columnas adicionales, columnas faltantes, columnas `Unnamed`,
+  valores nulos ni infinitos.
 
 ## Página gerencial: análisis cualitativo
 
@@ -167,3 +233,65 @@ Incluye:
 Los conteos de residuos estandarizados no eliminan observaciones ni constituyen
 una prueba definitiva. Los gráficos requieren interpretación conjunta con el
 contexto y el diseño de recolección.
+
+## Ejecutar pruebas
+
+Validar sintaxis:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+Ejecutar toda la suite:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Ejecutar solo integración:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/test_integracion_dashboard.py
+```
+
+## Estructura de carpetas
+
+```text
+Dashboard-Volt-Ar-Scooters/
+├── app.py
+├── pages/
+├── src/
+├── tests/
+├── data/
+└── docs/
+```
+
+- `pages/`: páginas de Streamlit.
+- `src/`: carga, validación, simulación y análisis estadístico.
+- `tests/`: pruebas automatizadas unitarias e integrales.
+- `data/`: archivo semanal predeterminado.
+- `docs/`: documentación metodológica, prompts, registro de pruebas y matriz de
+  cumplimiento.
+
+## Limitaciones
+
+- Los datos semanales son simulados con fines académicos.
+- Las conclusiones poblacionales corresponden al escenario simulado.
+- La aplicación no implementa autenticación, base de datos ni API externa.
+- Los diagnósticos de residuos requieren interpretación humana; no aprueban ni
+  invalidan automáticamente el modelo.
+- La independencia de observaciones depende del diseño de recolección y no puede
+  verificarse completamente con los gráficos.
+
+## Uso de inteligencia artificial
+
+El proyecto documenta el uso de IA en `docs/prompts.md`. La IA se utiliza como
+asistente de programación, documentación y revisión, pero los integrantes deben
+comprender, revisar y probar todo el código y los resultados antes de
+incorporarlos al trabajo académico.
+
+## Validación humana
+
+La validación humana queda registrada en `docs/registro_pruebas.md`. Los
+resultados estadísticos no deben aceptarse únicamente por ser generados por el
+dashboard; deben revisarse con criterio teórico, técnico y metodológico.
