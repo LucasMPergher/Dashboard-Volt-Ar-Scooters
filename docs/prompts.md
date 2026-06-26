@@ -18,6 +18,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-07 | 2026-06-26 | Codex | Inferencia cuantitativa | Implementar la prueba t bilateral para la pendiente poblacional y los intervalos de confianza en la Página 2. | Se implementaron inferencia de regresión, decisión, conclusión, IC para β₀/β₁ e intervalo de Fisher para ρ. | Compilación Python correcta; `154 passed` con Pytest. | Propuesto: `feat: agregar inferencia cuantitativa`. |
 | P-08 | 2026-06-26 | Codex | Calculadora de predicción | Implementar la calculadora técnica de autonomía con intervalo para media e intervalo individual. | Se implementó predicción con Statsmodels, extrapolación, amplitudes, gráfico técnico y documentación. | Compilación Python correcta; `175 passed` con Pytest. | Propuesto: `feat: agregar calculadora de prediccion`. |
 | P-09 | 2026-06-26 | Codex | Diagnóstico de residuos | Implementar gráficos y métricas de diagnóstico residual para validar técnicamente supuestos del modelo lineal en la Página 2. | Se implementaron residuos, residuos estandarizados, gráfico residuos-ajustados, Q-Q Plot, histograma, textos prudentes y pruebas P-09. | Compilación Python correcta; `203 passed` con Pytest. | Propuesto: `feat: agregar diagnostico de residuos`. |
+| P-10 | 2026-06-26 | Codex | Integración final | Revisar el dashboard completo, agregar pruebas de integración, matriz de cumplimiento y documentación final. | Se agregaron pruebas integrales, matriz de cumplimiento, documentación final y correcciones menores de textos de integración. | Integración aislada: `40 passed`; suite completa: `244 passed`. | Propuesto: `chore: completar integracion y control de calidad`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -4221,6 +4222,868 @@ No se registraron correcciones humanas durante la implementación de P-09.
 
 ```text
 feat: agregar diagnostico de residuos
+```
+
+## P-10 — Integración final, pruebas completas y control de requisitos
+
+### Objetivo
+
+Realizar una revisión integral del dashboard para comprobar que las fases P-00 a
+P-09 funcionan correctamente de manera conjunta, sin incorporar nuevos métodos
+estadísticos.
+
+### Resumen operativo del prompt
+
+````text
+Trabaja exclusivamente en la rama `feat/integracion-final`.
+
+No realices commit, push, merge ni Pull Request.
+
+# Fase P-10: integración final, pruebas completas y control de requisitos
+
+## Objetivo general
+
+Realizar una revisión integral del dashboard Volt-Ar Scooters para comprobar que
+todas las funcionalidades desarrolladas entre P-00 y P-09 funcionan
+correctamente de manera conjunta.
+
+Esta fase no debe incorporar nuevos métodos estadísticos. Debe concentrarse en
+integración entre módulos, consistencia estadística, actualización dinámica,
+manejo de archivos válidos e inválidos, navegación completa por Streamlit,
+experiencia de uso, documentación, cumplimiento de la consigna, pruebas de
+regresión y detección de errores que solo aparecen al ejecutar páginas
+específicas.
+
+Antes de modificar archivos, leer `AGENTS.md`, confirmar la rama
+`feat/integracion-final`, ejecutar `git status --short --branch`, verificar árbol
+limpio, confirmar que la rama fue creada desde un `main` actualizado con P-09,
+inspeccionar `app.py`, páginas, `src/`, tests y documentación, confirmar P-00 a
+P-09 documentadas y presentar un plan breve.
+
+Revisar Página 1 con enfoque gerencial descriptivo y muestral: carga activa,
+vista previa diferenciada, tabla de contingencia, marginales, barras agrupadas,
+barras apiladas, Chi-cuadrado muestral, grados de libertad, p-valor, α dinámico,
+comparación neutral y ausencia de decisiones inferenciales poblacionales.
+
+Revisar Página 1 cuantitativa: dispersión, una sola recta global, ecuación,
+Pearson, R², interpretación muestral, unidades, aclaración de inferencia en
+Página 2 y ausencia de hipótesis, causalidad, intervalos y diagnósticos.
+
+Revisar Página 2: inferencia cualitativa, inferencia cuantitativa, calculadora
+de predicción y validación técnica de supuestos, incluyendo hipótesis,
+frecuencias esperadas, diferencias relativas, aportes, robustez, prueba t,
+intervalos, predicción, residuos frente a ajustados, Q-Q Plot, histograma,
+conteos de residuos estandarizados y ausencia de aprobación automática de
+supuestos.
+
+Verificar consistencia entre módulos y páginas: uso de
+`st.session_state["datos_activos"]`, ausencia de lectura directa de Excel desde
+páginas, uso del DataFrame completo, `head()` solo en vista previa, misma tabla
+observada, mismo Chi-cuadrado, Pearson, R², pendiente, intercepto, predicción,
+residuos, bandas, niveles independientes de significancia, claves de widgets
+sin duplicar, p-valores invariantes ante α, estimadores invariantes ante nivel de
+confianza e intervalo individual más amplio que el intervalo para la media.
+
+Navegar realmente en Streamlit por página principal, Perfil Gerencial, Perfil
+Analista, secciones cualitativas y cuantitativas, calculadora, residuos, Q-Q Plot,
+histograma y expanders relevantes. Verificar ausencia de `NameError`, `KeyError`,
+`AttributeError`, `ValueError` no controlado, claves duplicadas, errores de
+Plotly, errores de importación y trazas técnicas visibles.
+
+Usar al menos tres matrices válidas: semana predeterminada y dos semanas
+generadas con semillas distintas. Verificar cantidad de observaciones, tabla de
+contingencia, Chi-cuadrado, p-valor cualitativo, Pearson, R², pendiente,
+p-valor de la pendiente, intervalos, predicción X = 24, media de residuos y
+cantidad de puntos en gráficos. Confirmar que los resultados cambien cuando
+cambian los datos.
+
+Comprobar rechazo de archivos inválidos: columna faltante, columna adicional,
+columna `Unnamed`, menos de 30 filas, más de 60 filas, sucursal desconocida,
+nivel de fallos desconocido, valor nulo, infinito, antigüedad fuera de rango o
+decimal, autonomía fuera de rango, Excel sin hoja `datos`, CSV inválido,
+extensión no permitida y archivo vacío.
+
+Agregar pruebas de integración en `tests/test_integracion_dashboard.py` o una
+estructura equivalente para verificar consistencia cruzada, uso de 48 filas,
+vista previa, cambio/restauración de semanas, constantes `VARIABLE_*`, ausencia
+de expresiones prohibidas, ausencia de lenguaje causal y ausencia de aprobación
+automática de supuestos.
+
+Crear `docs/matriz_cumplimiento.md` con columnas: Requisito oficial,
+Implementación, Archivo o módulo, Prueba asociada, Estado y Observaciones. Usar
+estados Cumplido, Cumplido con observación o Pendiente.
+
+Actualizar `README.md`, `docs/decisiones_metodologicas.md`,
+`docs/registro_pruebas.md`, `docs/prompts.md` y la matriz de cumplimiento.
+Conservar íntegramente P-00 a P-09. Incluir prompt completo, plan, archivos
+modificados, problemas encontrados, errores corregidos, pruebas integrales,
+resultados con varias semanas, pruebas de archivos inválidos, limitaciones,
+validación humana y commit propuesto.
+
+Revisar rutas locales absolutas, `.gitignore`, cachés, secretos y archivos
+temporales. No eliminar archivos válidos.
+
+Ejecutar validaciones finales: compileall, Pytest completo, Pytest de
+integración, inicio y navegación real de Streamlit, detención del servidor,
+`git diff --check`, `git status --short`, `git diff --stat` y `git diff`.
+
+No realizar commit, push, merge ni Pull Request. Detenerse y esperar revisión.
+````
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/integracion-final`.
+
+No realices commit, push, merge ni Pull Request.
+
+# Fase P-10: integración final, pruebas completas y control de requisitos
+
+## Objetivo general
+
+Realizar una revisión integral del dashboard Volt-Ar Scooters para comprobar que todas las funcionalidades desarrolladas entre P-00 y P-09 funcionan correctamente de manera conjunta.
+
+Esta fase no debe incorporar nuevos métodos estadísticos.
+
+Debe concentrarse en:
+
+* integración entre módulos;
+* consistencia estadística;
+* actualización dinámica;
+* manejo de archivos válidos e inválidos;
+* navegación completa por Streamlit;
+* experiencia de uso;
+* documentación;
+* cumplimiento de la consigna;
+* pruebas de regresión;
+* detección de errores que solo aparecen al ejecutar páginas específicas.
+
+## Preparación obligatoria
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma que la rama activa sea:
+
+```text
+feat/integracion-final
+```
+
+3. Ejecuta:
+
+```powershell
+git status --short --branch
+```
+
+4. Verifica que el árbol de trabajo esté limpio.
+5. Confirma que la rama fue creada desde un `main` actualizado que contiene P-09.
+6. Inspecciona:
+
+   * `app.py`
+   * `pages/1_Perfil_Gerencial.py`
+   * `pages/2_Perfil_Analista.py`
+   * todos los archivos de `src/`
+   * todos los tests;
+   * `README.md`
+   * `docs/decisiones_metodologicas.md`
+   * `docs/diccionario_datos.md`
+   * `docs/registro_pruebas.md`
+   * `docs/prompts.md`.
+7. Confirma que P-00 a P-09 estén documentadas.
+8. Presenta un plan breve antes de modificar archivos.
+
+No realices cambios hasta haber inspeccionado el estado completo del proyecto.
+
+# 1. Revisión de la estructura funcional
+
+Verifica que la aplicación conserve correctamente las siguientes funcionalidades.
+
+## Página 1: Perfil gerencial
+
+### Análisis cualitativo descriptivo y muestral
+
+Debe contener:
+
+* identificación del archivo activo;
+* cantidad total de observaciones;
+* vista previa claramente diferenciada de la base completa;
+* tabla de contingencia observada;
+* totales marginales;
+* gráfico de barras agrupadas;
+* gráfico apilado al 100 %;
+* estadístico Chi-cuadrado muestral;
+* grados de libertad;
+* p-valor;
+* deslizador de significancia;
+* comparación neutral entre p-valor y α;
+* aclaración de que la conclusión inferencial corresponde a Página 2.
+
+No debe contener:
+
+* decisión inferencial poblacional;
+* “se rechaza H₀”;
+* “no se rechaza H₀”;
+* afirmaciones de independencia poblacional;
+* afirmaciones de asociación poblacional.
+
+### Análisis cuantitativo descriptivo y muestral
+
+Debe contener:
+
+* gráfico de dispersión;
+* una sola recta de regresión global;
+* ecuación estimada;
+* coeficiente de Pearson;
+* coeficiente de determinación R²;
+* interpretación dinámica muestral;
+* unidades de antigüedad en meses;
+* unidades de autonomía en kilómetros;
+* aclaración de que la inferencia corresponde a Página 2.
+
+No debe contener:
+
+* prueba de hipótesis;
+* conclusión poblacional;
+* lenguaje causal;
+* intervalos inferenciales;
+* diagnósticos de residuos.
+
+## Página 2: Perfil analista
+
+### Inferencia cualitativa
+
+Debe contener:
+
+* hipótesis H₀ y H₁;
+* frecuencias observadas;
+* frecuencias esperadas;
+* diferencias relativas porcentuales;
+* aportes de cada celda al Chi-cuadrado;
+* estadístico Chi-cuadrado;
+* grados de libertad;
+* p-valor;
+* nivel de significancia;
+* decisión;
+* conclusión contextual;
+* evaluación de supuestos;
+* evaluación de robustez;
+* aclaración de población simulada.
+
+### Inferencia cuantitativa
+
+Debe contener:
+
+* modelo poblacional;
+* hipótesis para la pendiente;
+* pendiente estimada;
+* error estándar;
+* estadístico t;
+* grados de libertad n − 2;
+* p-valor bilateral;
+* nivel de significancia;
+* decisión;
+* conclusión contextual;
+* intervalo para β₀;
+* intervalo para β₁;
+* intervalo aproximado de Fisher para ρ;
+* deslizador de nivel de confianza.
+
+### Calculadora de predicción
+
+Debe contener:
+
+* entrada de antigüedad;
+* predicción puntual;
+* intervalo de confianza para la media esperada;
+* intervalo de predicción individual;
+* nivel de confianza coherente con P-07;
+* comparación de amplitudes;
+* advertencia de extrapolación;
+* nota de no recorte estadístico;
+* gráfico técnico con recta y bandas.
+
+### Validación técnica de supuestos
+
+Debe contener:
+
+* residuos frente a valores ajustados;
+* línea horizontal en residuo cero;
+* Q-Q Plot;
+* histograma de residuos;
+* media residual;
+* desviación residual;
+* conteos de residuos estandarizados;
+* explicación de linealidad;
+* explicación de homocedasticidad;
+* explicación de normalidad;
+* aclaración sobre independencia;
+* ausencia de aprobación automática de los supuestos.
+
+# 2. Consistencia entre módulos y páginas
+
+Verifica mediante inspección y pruebas que:
+
+1. Ambas páginas utilicen:
+
+```python
+st.session_state["datos_activos"]
+```
+
+2. No se lea directamente el Excel desde los módulos estadísticos ni desde las páginas.
+3. El archivo activo sea el mismo en toda la aplicación.
+4. Cambiar el archivo activo actualice todos los resultados.
+5. Restaurar el archivo predeterminado restaure todos los resultados.
+6. El DataFrame completo alimente los análisis, no `head(10)`.
+7. `head()` se utilice únicamente en la vista previa.
+8. Página 1 y Página 2 utilicen la misma tabla observada.
+9. El Chi-cuadrado coincida en ambas páginas.
+10. Pearson coincida entre análisis descriptivo e inferencial.
+11. R² coincida entre análisis descriptivo e inferencial.
+12. La pendiente e intercepto coincidan en:
+
+    * gráfico de dispersión;
+    * ecuación;
+    * inferencia;
+    * calculadora de predicción;
+    * diagnóstico de residuos.
+13. La predicción puntual coincida con:
+
+[
+\hat Y=b_0+b_1x_0
+]
+
+14. Los residuos coincidan con:
+
+[
+e_i=y_i-\hat y_i
+]
+
+15. Las bandas de predicción provengan del mismo modelo.
+16. No existan modelos ajustados con configuraciones contradictorias.
+17. Los niveles de significancia cualitativo y cuantitativo tengan claves independientes.
+18. Los widgets de Streamlit no tengan claves duplicadas.
+19. El nivel de confianza de intervalos y predicción sea coherente.
+20. Cambiar α no modifique el p-valor.
+21. Cambiar el nivel de confianza no modifique los estimadores puntuales.
+22. El intervalo individual sea más amplio que el intervalo para la media.
+
+# 3. Navegación real de Streamlit
+
+No consideres suficiente que el servidor inicie.
+
+Debes navegar y ejecutar explícitamente:
+
+1. Página principal.
+2. Página `Perfil Gerencial`.
+3. Página `Perfil Analista`.
+4. Sección cualitativa de Página 1.
+5. Sección cuantitativa de Página 1.
+6. Inferencia cualitativa de Página 2.
+7. Inferencia cuantitativa de Página 2.
+8. Calculadora de predicción.
+9. Residuos frente a valores ajustados.
+10. Q-Q Plot.
+11. Histograma de residuos.
+12. Todos los expanders relevantes.
+
+Revisa que no aparezcan:
+
+* `NameError`;
+* `KeyError`;
+* `AttributeError`;
+* `ValueError` no controlado;
+* claves duplicadas de widgets;
+* errores de Plotly;
+* errores de importación;
+* trazas técnicas visibles para el usuario.
+
+Revisa todas las constantes `VARIABLE_*` utilizadas por las páginas y confirma que:
+
+* existan en `src.config`;
+* estén correctamente importadas;
+* no existan cadenas duplicadas innecesarias;
+* no existan nombres usados sin definición.
+
+Mantén o amplía la prueba preventiva basada en AST incorporada en P-09.
+
+# 4. Pruebas con varias semanas válidas
+
+Utiliza al menos tres matrices válidas:
+
+1. Semana predeterminada.
+2. Semana generada con una semilla distinta.
+3. Semana generada con otra semilla distinta.
+
+Cada matriz debe:
+
+* contener entre 30 y 60 filas;
+* tener exactamente las cuatro variables;
+* respetar las categorías permitidas;
+* respetar los rangos numéricos;
+* contener variabilidad suficiente en X e Y;
+* permitir ejecutar todos los análisis.
+
+Verifica para cada semana:
+
+* cantidad de observaciones;
+* tabla de contingencia;
+* Chi-cuadrado;
+* p-valor cualitativo;
+* Pearson;
+* R²;
+* pendiente;
+* p-valor de la pendiente;
+* intervalos;
+* predicción para X = 24;
+* media de residuos;
+* cantidad de puntos en los gráficos.
+
+Confirma que los resultados cambien cuando cambian los datos.
+
+No deben quedar valores almacenados de una semana anterior.
+
+No es obligatorio conservar los Excel adicionales. Si se conservan, deben ubicarse claramente como datos de demostración y documentarse.
+
+# 5. Pruebas con archivos inválidos
+
+Comprueba que se rechacen correctamente:
+
+1. Archivo con una columna faltante.
+2. Archivo con una columna adicional.
+3. Archivo con columna `Unnamed`.
+4. Archivo con menos de 30 filas.
+5. Archivo con más de 60 filas.
+6. Categoría de sucursal desconocida.
+7. Categoría de nivel de fallos desconocida.
+8. Valor nulo.
+9. Valor infinito.
+10. Antigüedad menor que 1.
+11. Antigüedad mayor que 48.
+12. Antigüedad decimal no entera.
+13. Autonomía menor que 15.
+14. Autonomía mayor que 45.
+15. Excel sin hoja `datos`.
+16. CSV con estructura inválida.
+17. Extensión no permitida.
+18. Archivo vacío.
+
+En todos los casos:
+
+* mostrar un mensaje comprensible;
+* no mostrar una traza técnica;
+* conservar el último conjunto válido activo;
+* no reemplazar `st.session_state["datos_activos"]`.
+
+# 6. Pruebas estadísticas cruzadas
+
+Agrega un archivo de pruebas de integración, por ejemplo:
+
+```text
+tests/test_integracion_dashboard.py
+```
+
+o amplía la estructura existente si resulta más coherente.
+
+Debe verificar como mínimo:
+
+1. Tabla observada común entre módulos.
+2. Chi-cuadrado común entre Página 1 y Página 2.
+3. Pearson común entre descripción e inferencia.
+4. R² común entre descripción e inferencia.
+5. Intercepto y pendiente comunes.
+6. Predicción puntual coincidente con la ecuación.
+7. Residuos coincidentes con observado menos ajustado.
+8. Intervalo individual más amplio que el de la media.
+9. P-valor independiente de α.
+10. Intervalos más amplios al aumentar la confianza.
+11. Estimadores invariantes ante el nivel de confianza.
+12. Uso de las 48 filas completas del archivo predeterminado.
+13. La vista previa no modifica los datos activos.
+14. Los resultados cambian con otra semana.
+15. Restaurar los datos predeterminados devuelve los resultados originales.
+16. Los nombres `VARIABLE_*` usados por ambas páginas existen y están importados.
+17. No existen expresiones prohibidas en Página 1.
+18. No se utiliza “se acepta H₀”.
+19. No aparece lenguaje causal.
+20. No se aprueban automáticamente los supuestos.
+
+Evita pruebas frágiles basadas en posiciones visuales internas de Streamlit.
+
+# 7. Revisión visual y de experiencia de uso
+
+Revisa:
+
+* títulos consistentes;
+* terminología en español;
+* ortografía;
+* acentos;
+* decimales razonables;
+* uso de coma o punto decimal consistente;
+* unidades visibles;
+* tablas legibles;
+* gráficos con título;
+* ejes correctamente identificados;
+* tooltips comprensibles;
+* leyendas correctas;
+* ausencia de textos duplicados;
+* ausencia de contenido técnico excesivo abierto por defecto;
+* uso de expanders para información complementaria;
+* mensajes de error comprensibles;
+* ausencia de trazas técnicas.
+
+Verifica especialmente:
+
+* “muestra” y “muestral” en Página 1;
+* “inferencia” y “población simulada” en Página 2;
+* diferencia entre asociación y causalidad;
+* diferencia entre IC de la media e intervalo individual;
+* diferencia entre interpolación y extrapolación;
+* diferencia entre p-valor y α;
+* diferencia entre nivel de confianza y nivel de significancia;
+* normalidad referida a los residuos;
+* independencia referida al diseño de recolección.
+
+No realices un rediseño visual completo.
+
+No agregues CSS complejo salvo que sea estrictamente necesario para resolver un problema concreto.
+
+# 8. Rendimiento y reutilización
+
+Revisa que:
+
+* no existan lecturas repetidas del Excel;
+* no se duplique lógica estadística;
+* no se copie código entre páginas;
+* las funciones estadísticas sean puras cuando sea posible;
+* se reutilicen estructuras ya existentes;
+* no se ajuste innecesariamente el mismo modelo varias veces dentro de una misma función;
+* no se guarden resultados obsoletos al cambiar de archivo.
+
+Puedes utilizar `st.cache_data` únicamente si:
+
+* la función es pura;
+* el DataFrame participa correctamente en la clave;
+* no se conservan resultados de semanas anteriores;
+* existe una mejora justificada.
+
+No optimices prematuramente.
+
+# 9. Matriz de cumplimiento
+
+Crea:
+
+```text
+docs/matriz_cumplimiento.md
+```
+
+Debe contener una tabla con estas columnas:
+
+| Requisito oficial | Implementación | Archivo o módulo | Prueba asociada | Estado | Observaciones |
+
+Incluye como mínimo:
+
+* cantidad de observaciones;
+* cuatro variables;
+* variable cualitativa nominal;
+* variable cualitativa ordinal;
+* dos variables cuantitativas;
+* correlación lógica intencional;
+* carga semanal;
+* Excel y CSV;
+* Página 1;
+* Página 2;
+* tabla de contingencia;
+* marginales;
+* barras agrupadas;
+* barras apiladas;
+* Chi-cuadrado;
+* α dinámico;
+* frecuencias esperadas;
+* diferencias relativas;
+* robustez;
+* dispersión;
+* recta de regresión;
+* Pearson;
+* R²;
+* prueba de pendiente;
+* intervalos de parámetros;
+* predicción puntual;
+* intervalo para la media;
+* intervalo individual;
+* residuos frente a ajustados;
+* Q-Q Plot;
+* histograma;
+* uso documentado de IA;
+* registro de prompts;
+* validación humana;
+* pruebas automatizadas.
+
+El estado debe ser uno de:
+
+* Cumplido.
+* Cumplido con observación.
+* Pendiente.
+
+No marques requisitos como cumplidos sin evidencia concreta.
+
+# 10. Documentación final
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+* `docs/matriz_cumplimiento.md`
+
+Conserva íntegramente P-00 a P-09.
+
+Agrega P-10 con:
+
+* prompt completo;
+* plan;
+* archivos modificados;
+* problemas encontrados;
+* errores corregidos;
+* pruebas integrales;
+* resultados con varias semanas;
+* pruebas de archivos inválidos;
+* matriz de cumplimiento;
+* limitaciones;
+* validación humana;
+* commit propuesto.
+
+## README
+
+Debe incluir claramente:
+
+1. Descripción del proyecto.
+2. Objetivos.
+3. Variables analizadas.
+4. Requisitos de Python.
+5. Creación del entorno virtual.
+6. Instalación de dependencias.
+7. Ejecución de Streamlit.
+8. Generación de datos.
+9. Carga semanal.
+10. Formato esperado del Excel y CSV.
+11. Estructura de páginas.
+12. Funcionalidades estadísticas.
+13. Ejecución de pruebas.
+14. Estructura de carpetas.
+15. Limitaciones.
+16. Uso de inteligencia artificial.
+17. Validación humana de resultados.
+
+No incluyas credenciales, rutas locales absolutas ni información específica del equipo del desarrollador.
+
+# 11. Control de rutas y portabilidad
+
+Busca y elimina de la documentación o código cualquier ruta local absoluta como:
+
+```text
+C:\Users\lucas\...
+```
+
+La aplicación debe utilizar rutas relativas o construidas con `pathlib`.
+
+Verifica que no se hayan versionado accidentalmente:
+
+* `.venv/`
+* `__pycache__/`
+* `.pytest_cache/`
+* archivos temporales;
+* capturas no solicitadas;
+* archivos de OneDrive;
+* archivos de configuración del editor;
+* logs;
+* archivos con secretos.
+
+Revisa `.gitignore`.
+
+No elimines archivos válidos del proyecto.
+
+# 12. Validaciones finales obligatorias
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Ejecuta además las pruebas de integración por separado:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/test_integracion_dashboard.py
+```
+
+Adapta el comando si utilizas otro nombre de archivo.
+
+Inicia Streamlit:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+No te limites a comprobar el inicio.
+
+Navega explícitamente por:
+
+* Página principal.
+* Perfil Gerencial.
+* Perfil Analista.
+* Gráfico cualitativo.
+* Gráfico cuantitativo.
+* Inferencia cualitativa.
+* Inferencia cuantitativa.
+* Calculadora.
+* Gráfico de residuos.
+* Q-Q Plot.
+* Histograma.
+
+Detén el servidor y confirma que el puerto quede libre.
+
+Ejecuta:
+
+```powershell
+git diff --check
+git status --short
+```
+
+Revisa también:
+
+```powershell
+git diff --stat
+git diff
+```
+
+# 13. Restricciones
+
+No hagas:
+
+* commit;
+* push;
+* merge;
+* Pull Request;
+* cambios de rama;
+* nuevos métodos estadísticos;
+* reestructuración general innecesaria;
+* rediseño completo;
+* eliminación de documentación anterior;
+* modificación de datos predeterminados sin una razón real;
+* cambios silenciosos en fórmulas;
+* conclusiones causales;
+* aprobación automática de supuestos.
+
+Si detectas un error estadístico real, corrígelo y documéntalo explícitamente.
+
+Si detectas una ambigüedad metodológica, no la ocultes: documéntala.
+
+# 14. Informe final
+
+Al terminar reporta:
+
+1. Rama confirmada.
+2. Plan aplicado.
+3. Archivos creados.
+4. Archivos modificados.
+5. Problemas encontrados.
+6. Correcciones realizadas.
+7. Cantidad total de pruebas aprobadas.
+8. Resultado de las pruebas de integración.
+9. Resultados de las tres semanas.
+10. Resultados de archivos inválidos.
+11. Consistencia entre páginas.
+12. Resultado de la navegación real de Streamlit.
+13. Requisitos cumplidos.
+14. Requisitos cumplidos con observación.
+15. Requisitos pendientes.
+16. Limitaciones documentadas.
+17. Resultado de `git diff --check`.
+18. Estado final de Git.
+19. Mensaje de commit propuesto.
+
+El mensaje de commit propuesto puede ser:
+
+```text
+chore: completar integracion y control de calidad
+```
+
+No realices el commit.
+
+Detente y espera mi revisión.
+````
+
+### Plan aplicado
+
+1. Se verificó rama, estado limpio, historial de `main` con P-09 y documentación
+   P-00 a P-09.
+2. Se inspeccionaron páginas, módulos `src/`, tests y documentación.
+3. Se corrigieron textos obsoletos de integración en `app.py` y Página 1.
+4. Se agregó `tests/test_integracion_dashboard.py`.
+5. Se calcularon métricas reales para semanas con semillas 42, 7 y 123.
+6. Se creó `docs/matriz_cumplimiento.md`.
+7. Se actualizaron README, decisiones metodológicas, registro de pruebas y este
+   registro de prompts.
+8. Se ejecutarán las validaciones finales antes del cierre de la fase.
+
+### Archivos creados o modificados
+
+- `app.py`
+- `pages/1_Perfil_Gerencial.py`
+- `tests/test_integracion_dashboard.py`
+- `README.md`
+- `docs/decisiones_metodologicas.md`
+- `docs/registro_pruebas.md`
+- `docs/prompts.md`
+- `docs/matriz_cumplimiento.md`
+
+### Problemas encontrados
+
+- La portada conservaba texto de fase inicial que indicaba que los módulos
+  estadísticos se implementarían en fases posteriores.
+- Una nota de Página 1 indicaba en futuro que la conclusión inferencial se
+  presentaría en Página 2.
+- El primer fixture para el caso inválido de valor nulo en la prueba de
+  integración usaba una máscara de Pandas con forma incorrecta. Se corrigió el
+  fixture sin modificar la aplicación.
+
+### Resultados con varias semanas
+
+| Semilla | Chi-cuadrado | p Chi-cuadrado | Pearson | R² | Pendiente | p pendiente | Predicción X=24 | `|r est.| > 2` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 42 | 19.170279 | 0.000068742747 | -0.900523 | 0.810942 | -0.552768 | 2.97371341074e-18 | 31.899632 | 1 |
+| 7 | 19.047619 | 0.000073090693 | -0.920086 | 0.846558 | -0.518881 | 2.39587404239e-20 | 31.625117 | 2 |
+| 123 | 13.945455 | 0.000937093707 | -0.920721 | 0.847728 | -0.568801 | 2.00789672304e-20 | 32.999408 | 3 |
+
+### Pruebas de archivos inválidos
+
+Se verificó rechazo de 18 casos inválidos: columnas faltantes, adicionales,
+`Unnamed`, cantidades fuera del rango 30-60, categorías desconocidas, valores
+nulos, infinitos, rangos numéricos inválidos, Excel sin hoja `datos`, CSV
+inválido, extensión no permitida y archivo vacío.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- `.\.venv\Scripts\python.exe -m pytest -q tests/test_integracion_dashboard.py`
+- Inicio temporal y navegación de Streamlit
+- `git diff --check`
+- `git status --short`
+- `git diff --stat`
+- `git diff`
+
+### Commit propuesto
+
+```text
+chore: completar integracion y control de calidad
 ```
 
 ## Plantilla para próximos registros

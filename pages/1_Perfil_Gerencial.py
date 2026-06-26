@@ -49,7 +49,7 @@ nombre_archivo = st.session_state.get(CLAVE_NOMBRE_ARCHIVO_ACTIVO, "Sin archivo"
 st.caption(f"Archivo activo para el análisis cualitativo: `{nombre_archivo}`")
 st.info(
     "Esta página resume la muestra semanal activa. La conclusión inferencial se "
-    "presentará en la Página 2."
+    "presenta en la Página 2."
 )
 
 st.header("Análisis cualitativo")

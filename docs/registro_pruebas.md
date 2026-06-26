@@ -163,6 +163,95 @@ Validación de sintaxis ejecutada:
 Sin errores.
 ```
 
+## Fase P-10: integración final y control de requisitos
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P10-T01 | Verificar tabla observada común entre páginas. | Semana predeterminada. | Misma tabla. | Coincidencia. | Aprobada | Página 1 y Página 2 usan la misma función. |
+| P10-T02 | Verificar Chi-cuadrado común. | Semana predeterminada. | Mismo estadístico y p-valor. | Coincidencia. | Aprobada | Sin cálculos divergentes. |
+| P10-T03 | Verificar Pearson y R² comunes. | Semana predeterminada. | Descripción e inferencia coinciden. | Coincidencia. | Aprobada | Mismo modelo OLS. |
+| P10-T04 | Verificar intercepto y pendiente comunes. | Semana predeterminada. | Regresión, inferencia y diagnóstico coinciden. | Coincidencia. | Aprobada | No se ajusta otro modelo. |
+| P10-T05 | Verificar predicción puntual. | X = 24. | `b0 + b1 * x0`. | Coincidencia. | Aprobada | Calculadora coherente. |
+| P10-T06 | Verificar residuos. | Semana predeterminada. | `y - y_hat`. | Coincidencia. | Aprobada | Diagnóstico coherente. |
+| P10-T07 | Comparar intervalos de predicción. | X = 24. | Individual >= media. | Cumple. | Aprobada | Statsmodels. |
+| P10-T08 | Confirmar p-valores independientes de α. | Repetición de cálculos. | p-valores invariantes. | Cumple. | Aprobada | α solo cambia decisión. |
+| P10-T09 | Confirmar efecto del nivel de confianza. | 90 % y 99 %. | Intervalos se amplían, estimadores no cambian. | Cumple. | Aprobada | Coherente con P-07/P-08. |
+| P10-T10 | Confirmar uso de 48 filas completas. | Semana predeterminada. | Análisis con 48 filas. | Cumple. | Aprobada | `head(10)` no muta datos. |
+| P10-T11 | Confirmar actualización al cambiar semana. | Semilla 7. | Resultados distintos. | Cumple. | Aprobada | Sin arrastre de valores previos. |
+| P10-T12 | Confirmar restauración predeterminada. | Semana 1. | Métricas originales. | Cumple. | Aprobada | Restauración conceptual validada. |
+| P10-T13 | Ejecutar análisis en tres semanas válidas. | Semillas 42, 7 y 123. | Todos los módulos calculan resultados. | Cumple. | Aprobada | 48 puntos en residuos y Q-Q. |
+| P10-T14 | Rechazar archivos inválidos. | 18 casos inválidos. | Excepción controlada. | Cumple. | Aprobada | Último conjunto válido no se reemplaza. |
+| P10-T15 | Verificar uso de `session_state`. | Código de páginas. | Páginas usan componente de carga. | Cumple. | Aprobada | No leen Excel/CSV directamente. |
+| P10-T16 | Verificar `head()` limitado a vista previa. | Código de páginas e interfaz. | Solo en `src/interfaz_carga.py`. | Cumple. | Aprobada | Los análisis usan DataFrame completo. |
+| P10-T17 | Verificar constantes `VARIABLE_*`. | AST de páginas. | Importadas desde `src.config`. | Cumple. | Aprobada | Previene `NameError`. |
+| P10-T18 | Verificar claves únicas de widgets. | AST de Página 2. | Sin duplicados. | Cumple. | Aprobada | α cualitativo y cuantitativo independientes. |
+| P10-T19 | Verificar Página 1 sin expresiones inferenciales prohibidas. | Código de Página 1. | Sin decisiones poblacionales. | Cumple. | Aprobada | Perfil descriptivo. |
+| P10-T20 | Verificar ausencia de lenguaje causal y "se acepta H0". | Código de páginas. | Ausente. | Cumple. | Aprobada | Asociación/relación, no causalidad. |
+| P10-T21 | Verificar que no se aprueben supuestos automáticamente. | Código de Página 2. | Sin frases prohibidas. | Cumple. | Aprobada | Diagnóstico requiere interpretación. |
+| P10-T22 | Verificar portada actualizada. | `app.py`. | Sin textos de estructura inicial. | Cumple. | Aprobada | Corrección menor P-10. |
+
+Validación de integración ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q tests/test_integracion_dashboard.py
+40 passed
+```
+
+Validación automatizada completa ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+244 passed
+```
+
+Resultados de tres semanas válidas:
+
+| Semilla | n | Chi-cuadrado | p Chi-cuadrado | Pearson | R² | Pendiente | p pendiente | Predicción X=24 | Media residuos | `|r est.| > 2` | Puntos Q-Q |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 42 | 48 | 19.170279 | 0.000068742747 | -0.900523 | 0.810942 | -0.552768 | 2.97371341074e-18 | 31.899632 | -0.000000000000023 | 1 | 48 |
+| 7 | 48 | 19.047619 | 0.000073090693 | -0.920086 | 0.846558 | -0.518881 | 2.39587404239e-20 | 31.625117 | -0.000000000000019 | 2 | 48 |
+| 123 | 48 | 13.945455 | 0.000937093707 | -0.920721 | 0.847728 | -0.568801 | 2.00789672304e-20 | 32.999408 | -0.000000000000030 | 3 | 48 |
+
+Casos inválidos verificados:
+
+- columna faltante;
+- columna adicional;
+- columna `Unnamed`;
+- menos de 30 filas;
+- más de 60 filas;
+- sucursal desconocida;
+- nivel de fallos desconocido;
+- valor nulo;
+- valor infinito;
+- antigüedad menor que 1;
+- antigüedad mayor que 48;
+- antigüedad decimal no entera;
+- autonomía menor que 15;
+- autonomía mayor que 45;
+- Excel sin hoja `datos`;
+- CSV con estructura inválida;
+- extensión no permitida;
+- archivo vacío.
+
+Validación visual ejecutada en Streamlit:
+
+- Página principal.
+- Perfil Gerencial.
+- Perfil Analista.
+- Gráfico cualitativo.
+- Gráfico cuantitativo.
+- Inferencia cualitativa.
+- Inferencia cuantitativa.
+- Calculadora.
+- Gráfico de residuos.
+- Q-Q Plot.
+- Histograma de residuos.
+
+Resultado: navegación aprobada sin `NameError`, `KeyError`, `AttributeError`,
+`ValueError` no controlado, claves duplicadas visibles, errores de importación
+ni trazas técnicas. Se abrieron los expanders de base completa e histograma de
+residuos.
+
 ## Fase P-09: diagnóstico de residuos y validación técnica de supuestos
 
 | Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |

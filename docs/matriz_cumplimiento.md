@@ -1,0 +1,39 @@
+# Matriz de cumplimiento
+
+| Requisito oficial | Implementación | Archivo o módulo | Prueba asociada | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- |
+| Cantidad de observaciones | Validación entre 30 y 60 filas; semana predeterminada con 48 registros. | `src/config.py`, `src/validacion_datos.py`, `data/volt_ar_semana_01.xlsx` | `test_dataframe_completo_alimenta_analisis_y_vista_previa_no_muta` | Cumplido | Los archivos fuera de rango se rechazan. |
+| Cuatro variables estadísticas | Se declaran y validan exactamente `Sucursal`, `Nivel_Fallos`, `Antiguedad_Bateria_Meses` y `Autonomia_Real_Km`. | `src/config.py`, `src/validacion_datos.py` | `test_exactamente_cuatro_variables_estadisticas`, `test_conservacion_de_las_cuatro_columnas` | Cumplido | `ID_Monopatin` no se usa como variable estadística. |
+| Variable cualitativa nominal | `Sucursal` con categorías Rosario y Córdoba. | `src/config.py`, `docs/diccionario_datos.md` | `test_categorias_permitidas_para_sucursal` | Cumplido | Escala nominal documentada. |
+| Variable cualitativa ordinal | `Nivel_Fallos` con categorías Bajo, Medio y Alto. | `src/config.py`, `docs/diccionario_datos.md` | `test_categorias_permitidas_para_nivel_de_fallos` | Cumplido | Escala ordinal documentada. |
+| Dos variables cuantitativas | `Antiguedad_Bateria_Meses` como X y `Autonomia_Real_Km` como Y. | `src/config.py`, `src/analisis_cuantitativo.py` | `test_variables_cuantitativas_declaradas` | Cumplido | Ambas en escala de razón. |
+| Correlación lógica intencional | Simulación con relación negativa no perfecta. | `src/simulacion_datos.py` | `test_correlacion_negativa_y_no_perfecta` | Cumplido | Semana 1: Pearson -0.900523. |
+| Carga semanal | Componente central mantiene `st.session_state["datos_activos"]`. | `src/interfaz_carga.py` | `test_paginas_usan_session_state_y_no_leen_archivos_directamente` | Cumplido | Las páginas usan el DataFrame activo. |
+| Excel y CSV | Lectura de `.xlsx` con hoja `datos` y `.csv` con coma o punto y coma. | `src/carga_datos.py` | `test_lectura_de_excel_valido`, `test_lectura_de_csv_valido_con_coma`, `test_lectura_de_csv_valido_con_punto_y_coma` | Cumplido | CSV UTF-8. |
+| Página 1 | Perfil gerencial descriptivo y muestral. | `pages/1_Perfil_Gerencial.py` | `test_pagina_gerencial_conserva_modulo_cualitativo`, `test_pagina_gerencial_contiene_modulo_cuantitativo` | Cumplido | No emite decisión poblacional. |
+| Página 2 | Perfil analista inferencial, predictivo y diagnóstico. | `pages/2_Perfil_Analista.py` | `test_pagina_analista_conserva_p06_p07_p08_y_p09` | Cumplido | Incluye P-06 a P-09. |
+| Tabla de contingencia | Tabla observada por `Sucursal` y `Nivel_Fallos`. | `src/analisis_cualitativo.py` | `test_tabla_observada_comun_entre_paginas` | Cumplido | Orden canónico de categorías. |
+| Marginales | Totales por fila y columna para visualización. | `src/analisis_cualitativo.py`, `pages/1_Perfil_Gerencial.py` | `test_totales_marginales_correctos` | Cumplido | No se usan en el cálculo de Chi-cuadrado. |
+| Barras agrupadas | Gráfico de frecuencias observadas por sucursal. | `pages/1_Perfil_Gerencial.py` | `test_p04_y_p05_permanecen_presentes_en_pagina_gerencial` | Cumplido | Plotly Express. |
+| Barras apiladas | Gráfico de composición porcentual al 100 %. | `pages/1_Perfil_Gerencial.py` | `test_porcentajes_por_sucursal_suman_cien` | Cumplido | Eje Y en porcentaje. |
+| Chi-cuadrado | Cálculo sin corrección de Yates sobre tabla efectiva. | `src/analisis_cualitativo.py` | `test_chi_cuadrado_comun_entre_paginas` | Cumplido | Semana 1: 19.170279. |
+| α dinámico | Deslizadores independientes para comparación cualitativa y prueba cuantitativa. | `pages/1_Perfil_Gerencial.py`, `pages/2_Perfil_Analista.py` | `test_widgets_de_pagina_analista_tienen_claves_unicas`, `test_p_valores_no_dependen_de_alpha` | Cumplido | Cambia la decisión, no el p-valor. |
+| Frecuencias esperadas | Cálculo bajo independencia. | `src/analisis_cualitativo.py`, `pages/2_Perfil_Analista.py` | `test_frecuencias_esperadas_correctas` | Cumplido | Se muestran en Página 2. |
+| Diferencias relativas | Convención `(O - E) / E * 100`. | `src/analisis_cualitativo.py` | `test_diferencias_relativas_correctas` | Cumplido | Documentada en decisiones metodológicas. |
+| Robustez | Evaluación de esperadas menores que 1 y porcentaje mayor o igual a 5. | `src/analisis_cualitativo.py`, `pages/2_Perfil_Analista.py` | `test_evaluacion_de_robustez_completamente_cumplida` | Cumplido | Se advierte si no se cumplen criterios. |
+| Dispersión | Gráfico X-Y con color por sucursal. | `pages/1_Perfil_Gerencial.py` | `test_pagina_gerencial_contiene_modulo_cuantitativo` | Cumplido | Tooltip con variables de contexto. |
+| Recta de regresión | Una recta global muestral. | `src/analisis_cuantitativo.py`, `pages/1_Perfil_Gerencial.py` | `test_recta_de_regresion_usa_coeficientes_sin_redondeo_visual` | Cumplido | No se ajustan rectas por grupo. |
+| Pearson | Coeficiente muestral y uso inferencial coherente. | `src/analisis_cuantitativo.py` | `test_pearson_y_r2_comunes_entre_descripcion_e_inferencia` | Cumplido | Semana 1: -0.900523. |
+| R² | Determinación del modelo lineal simple. | `src/analisis_cuantitativo.py` | `test_pearson_y_r2_comunes_entre_descripcion_e_inferencia` | Cumplido | Semana 1: 0.810942. |
+| Prueba de pendiente | Prueba t bilateral para `β₁`. | `src/analisis_cuantitativo.py`, `pages/2_Perfil_Analista.py` | `test_p_valor_pendiente_coincide_con_statsmodels` | Cumplido | gl = n - 2. |
+| Intervalos de parámetros | IC dinámicos para `β₀` y `β₁`. | `src/analisis_cuantitativo.py` | `test_confianza_amplia_intervalos_sin_cambiar_estimadores` | Cumplido | El nivel de confianza no cambia estimadores. |
+| Predicción puntual | Calculadora para X ingresada. | `src/analisis_cuantitativo.py`, `pages/2_Perfil_Analista.py` | `test_prediccion_puntual_coincide_con_ecuacion` | Cumplido | X = 24 en semana 1: 31.899632 km. |
+| Intervalo para la media | Intervalo `mean_ci` de Statsmodels. | `src/analisis_cuantitativo.py` | `test_intervalo_para_media_correctamente_asignado` | Cumplido | Se muestra separado del individual. |
+| Intervalo individual | Intervalo `obs_ci` de Statsmodels. | `src/analisis_cuantitativo.py` | `test_intervalo_individual_mas_amplio_que_intervalo_media` | Cumplido | No se recorta al rango operativo. |
+| Residuos frente a ajustados | Gráfico con línea en residuo cero y tooltips de contexto. | `src/analisis_cuantitativo.py`, `pages/2_Perfil_Analista.py` | `test_datos_residuos_ajustados_incluyen_columnas_para_tooltip`, `test_pagina_analista_incluye_linea_horizontal_cero_residual` | Cumplido | Atípicos orientativos destacados sin eliminar filas. |
+| Q-Q Plot | Puntos y línea de referencia con `scipy.stats.probplot`. | `src/analisis_cuantitativo.py`, `pages/2_Perfil_Analista.py` | `test_datos_qq_linea_de_referencia_finita` | Cumplido | Evalúa normalidad de residuos. |
+| Histograma | Histograma complementario de residuos. | `src/analisis_cuantitativo.py`, `pages/2_Perfil_Analista.py` | `test_histograma_residuos_suma_frecuencias` | Cumplido | No sustituye al Q-Q Plot. |
+| Uso documentado de IA | Registro de prompts y uso de IA. | `docs/prompts.md` | Revisión documental P-10 | Cumplido | P-00 a P-10 documentadas. |
+| Registro de prompts | Tabla y detalle por fase. | `docs/prompts.md` | Revisión documental P-10 | Cumplido | P-10 agrega el prompt de integración. |
+| Validación humana | Pruebas manuales registradas en fases P-03, P-04, P-09 y P-10. | `docs/registro_pruebas.md` | Revisión documental P-10 | Cumplido con observación | La evaluación estadística final queda sujeta a revisión humana académica. |
+| Pruebas automatizadas | Suite Pytest e integración. | `tests/` | `pytest`, `tests/test_integracion_dashboard.py` | Cumplido | P-10 agrega 40 pruebas de integración. |
