@@ -21,9 +21,13 @@ from src.analisis_cuantitativo import (
     ErrorAnalisisCuantitativo,
     ajustar_inferencia_regresion,
     calcular_ancho_intervalo,
+    calcular_diagnostico_residuos,
     calcular_prediccion,
     concluir_prueba_pendiente,
     construir_bandas_prediccion,
+    construir_datos_histograma_residuos,
+    construir_datos_qq,
+    construir_datos_residuos_ajustados,
     decidir_prueba_pendiente,
 )
 from src.config import (
@@ -33,6 +37,8 @@ from src.config import (
     AUTONOMIA_MINIMA_KM,
     VARIABLE_ANTIGUEDAD_BATERIA,
     VARIABLE_AUTONOMIA_REAL,
+    VARIABLE_NIVEL_FALLOS,
+    VARIABLE_SUCURSAL,
 )
 from src.interfaz_carga import (
     CLAVE_NOMBRE_ARCHIVO_ACTIVO,
@@ -63,8 +69,8 @@ st.write(
 )
 st.info(
     "La inferencia cuantitativa y la calculadora de predicción se presentan "
-    "más abajo. Los diagnósticos del modelo se incorporarán en una fase "
-    "posterior."
+    "más abajo. La validación técnica de supuestos se presenta al final de "
+    "esta página."
 )
 
 st.subheader("Hipótesis")
@@ -365,9 +371,7 @@ else:
             hide_index=True,
         )
 
-    st.info(
-        "Los diagnósticos del modelo se incorporarán en fases posteriores."
-    )
+    st.info("La validación técnica de supuestos se presenta al final de la página.")
 
     st.header("Calculadora de predicción")
     st.write(
@@ -554,3 +558,205 @@ else:
             legend_title_text="Referencia",
         )
         st.plotly_chart(figura_prediccion, use_container_width=True)
+
+    st.header("Validación técnica de supuestos")
+    st.write(
+        "Los gráficos permiten evaluar la compatibilidad de los datos con los "
+        "supuestos del modelo lineal. La decisión debe considerar conjuntamente "
+        "los patrones observados, el contexto y el tamaño muestral."
+    )
+
+    try:
+        diagnostico = calcular_diagnostico_residuos(datos_activos)
+        datos_residuos = construir_datos_residuos_ajustados(
+            datos_activos,
+            diagnostico,
+        )
+        datos_qq = construir_datos_qq(diagnostico.residuos)
+        datos_histograma = construir_datos_histograma_residuos(
+            diagnostico.residuos
+        )
+    except ErrorAnalisisCuantitativo as error:
+        st.warning(str(error))
+    else:
+        st.subheader("Residuos frente a valores ajustados")
+        figura_residuos = go.Figure()
+        datos_no_atipicos = datos_residuos[~datos_residuos["Atipico_Mayor_2"]]
+        datos_atipicos = datos_residuos[datos_residuos["Atipico_Mayor_2"]]
+
+        figura_residuos.add_trace(
+            go.Scatter(
+                x=datos_no_atipicos["Autonomia_Ajustada_Km"],
+                y=datos_no_atipicos["Residuo_Km"],
+                mode="markers",
+                marker={"color": "#2563eb", "size": 8},
+                name="Residuos",
+                customdata=datos_no_atipicos[
+                    [
+                        "Autonomia_Observada_Km",
+                        "Residuo_Estandarizado",
+                        VARIABLE_ANTIGUEDAD_BATERIA,
+                        VARIABLE_SUCURSAL,
+                        VARIABLE_NIVEL_FALLOS,
+                    ]
+                ],
+                hovertemplate=(
+                    "Ajustada: %{x:.2f} km<br>"
+                    "Residuo: %{y:.2f} km<br>"
+                    "Observada: %{customdata[0]:.2f} km<br>"
+                    "Residuo estandarizado: %{customdata[1]:.2f}<br>"
+                    "Antigüedad: %{customdata[2]} meses<br>"
+                    "Sucursal: %{customdata[3]}<br>"
+                    "Nivel de fallos: %{customdata[4]}<extra></extra>"
+                ),
+            )
+        )
+        figura_residuos.add_trace(
+            go.Scatter(
+                x=datos_atipicos["Autonomia_Ajustada_Km"],
+                y=datos_atipicos["Residuo_Km"],
+                mode="markers",
+                marker={"color": "#dc2626", "size": 10, "symbol": "diamond"},
+                name="|residuo estandarizado| > 2",
+                customdata=datos_atipicos[
+                    [
+                        "Autonomia_Observada_Km",
+                        "Residuo_Estandarizado",
+                        VARIABLE_ANTIGUEDAD_BATERIA,
+                        VARIABLE_SUCURSAL,
+                        VARIABLE_NIVEL_FALLOS,
+                    ]
+                ],
+                hovertemplate=(
+                    "Ajustada: %{x:.2f} km<br>"
+                    "Residuo: %{y:.2f} km<br>"
+                    "Observada: %{customdata[0]:.2f} km<br>"
+                    "Residuo estandarizado: %{customdata[1]:.2f}<br>"
+                    "Antigüedad: %{customdata[2]} meses<br>"
+                    "Sucursal: %{customdata[3]}<br>"
+                    "Nivel de fallos: %{customdata[4]}<extra></extra>"
+                ),
+            )
+        )
+        figura_residuos.add_hline(
+            y=0,
+            line_dash="dash",
+            line_color="#111827",
+            annotation_text="Residuo = 0",
+        )
+        figura_residuos.update_layout(
+            title="Residuos frente a valores ajustados",
+            xaxis_title="Autonomía ajustada (km)",
+            yaxis_title="Residuo (km)",
+            legend_title_text="Referencia",
+        )
+        st.plotly_chart(figura_residuos, use_container_width=True)
+
+        st.subheader("Linealidad")
+        st.write(
+            "Un patrón curvo o sistemático alrededor de cero puede indicar que "
+            "la forma lineal no representa adecuadamente la relación."
+        )
+
+        st.subheader("Homocedasticidad")
+        st.write(
+            "Una dispersión aproximadamente constante de residuos a lo largo de "
+            "los valores ajustados es compatible con varianza constante. Una "
+            "forma de embudo puede indicar heterocedasticidad."
+        )
+
+        st.subheader("Q-Q Plot de residuos")
+        figura_qq = go.Figure()
+        figura_qq.add_trace(
+            go.Scatter(
+                x=datos_qq["Cuantil_Teorico"],
+                y=datos_qq["Residuo_Ordenado"],
+                mode="markers",
+                marker={"color": "#2563eb", "size": 8},
+                name="Residuos ordenados",
+            )
+        )
+        figura_qq.add_trace(
+            go.Scatter(
+                x=datos_qq["Cuantil_Teorico"],
+                y=datos_qq["Linea_Referencia"],
+                mode="lines",
+                line={"color": "#111827", "width": 2},
+                name="Línea de referencia",
+            )
+        )
+        figura_qq.update_layout(
+            title="Q-Q Plot de residuos",
+            xaxis_title="Cuantiles teóricos normales",
+            yaxis_title="Residuos ordenados",
+            legend_title_text="Referencia",
+        )
+        st.plotly_chart(figura_qq, use_container_width=True)
+        st.write(
+            "Si los puntos se aproximan razonablemente a la línea de referencia, "
+            "el supuesto de normalidad de los residuos resulta compatible con "
+            "los datos. Desviaciones sistemáticas, especialmente en los "
+            "extremos, pueden indicar falta de normalidad."
+        )
+
+        with st.expander("Ver histograma de residuos"):
+            figura_histograma = go.Figure()
+            figura_histograma.add_trace(
+                go.Bar(
+                    x=datos_histograma["Marca_Clase"],
+                    y=datos_histograma["Frecuencia"],
+                    width=(
+                        datos_histograma["Limite_Superior"]
+                        - datos_histograma["Limite_Inferior"]
+                    ),
+                    marker={"color": "#60a5fa"},
+                    name="Frecuencia",
+                )
+            )
+            figura_histograma.add_vline(
+                x=0,
+                line_dash="dash",
+                line_color="#111827",
+                annotation_text="Residuo = 0",
+            )
+            figura_histograma.update_layout(
+                title="Histograma de residuos",
+                xaxis_title="Residuo (km)",
+                yaxis_title="Frecuencia",
+                bargap=0.05,
+            )
+            st.plotly_chart(figura_histograma, use_container_width=True)
+            st.caption("El histograma complementa al Q-Q Plot, no lo sustituye.")
+
+        st.subheader("Métricas diagnósticas")
+        columna_1, columna_2, columna_3, columna_4 = st.columns(4)
+        columna_1.metric("Media residuos", f"{diagnostico.media_residuos:.6f}")
+        columna_2.metric(
+            "Desvío residual",
+            f"{diagnostico.desviacion_residuos:.6f}",
+        )
+        columna_3.metric(
+            "|r est.| > 2",
+            diagnostico.cantidad_residuos_atipicos_dos,
+        )
+        columna_4.metric(
+            "|r est.| > 3",
+            diagnostico.cantidad_residuos_atipicos_tres,
+        )
+        st.caption(
+            "Los conteos de residuos estandarizados son ayudas diagnósticas y "
+            "no constituyen una prueba definitiva."
+        )
+
+        st.subheader("Normalidad")
+        st.write(
+            "El supuesto de normalidad se refiere a los residuos o errores del "
+            "modelo, no necesariamente a la distribución de X o de Y."
+        )
+
+        st.subheader("Independencia")
+        st.write(
+            "La independencia depende del diseño de recolección. Se asume que "
+            "cada fila representa un monopatín diferente y que las observaciones "
+            "no dependen entre sí."
+        )

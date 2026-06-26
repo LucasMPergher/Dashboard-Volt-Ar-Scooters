@@ -107,8 +107,8 @@ Incluye:
 - conclusión contextual para el escenario poblacional simulado;
 - evaluación de supuestos y robustez de frecuencias esperadas.
 
-La calculadora de predicción se presenta más abajo. Los diagnósticos del modelo
-se incorporarán en fases posteriores.
+La inferencia cuantitativa, la calculadora de predicción y la validación
+técnica de supuestos se presentan más abajo.
 
 ## Página analista: inferencia cuantitativa
 
@@ -127,8 +127,8 @@ Incluye:
 - intervalo para `ρ` mediante la aproximación de Fisher.
 
 El p-valor no cambia al modificar `α`; solo cambia la decisión. Los intervalos
-se recalculan cuando cambia el nivel de confianza. La página no implementa
-todavía diagnósticos del modelo.
+se recalculan cuando cambia el nivel de confianza. Los diagnósticos del modelo
+se presentan en la sección de validación técnica de supuestos.
 
 ## Página analista: calculadora de predicción
 
@@ -148,3 +148,22 @@ El intervalo individual es más amplio que el intervalo para la media esperada
 porque incorpora la incertidumbre sobre la media y la variabilidad individual
 alrededor de la recta. Los intervalos estadísticos no se recortan al rango
 operativo de la simulación.
+
+## Página analista: validación técnica de supuestos
+
+La Página 2 incorpora una sección de diagnóstico de residuos para evaluar la
+compatibilidad técnica del modelo lineal con los supuestos principales.
+
+Incluye:
+
+- gráfico de residuos frente a valores ajustados;
+- Q-Q Plot de residuos con línea de referencia normal;
+- histograma de residuos como complemento;
+- media y desviación estándar de residuos;
+- conteos orientativos de residuos estandarizados con `|r| > 2` y `|r| > 3`;
+- aclaraciones sobre linealidad, homocedasticidad, normalidad de errores e
+  independencia de observaciones.
+
+Los conteos de residuos estandarizados no eliminan observaciones ni constituyen
+una prueba definitiva. Los gráficos requieren interpretación conjunta con el
+contexto y el diseño de recolección.

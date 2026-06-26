@@ -17,6 +17,7 @@ Se documentarán tanto los resultados exitosos como los errores y correcciones.
 | P-06 | 2026-06-21 | Codex | Inferencia cualitativa | Implementar la prueba Chi-cuadrado de independencia en la Página 2. | Se implementaron hipótesis, frecuencias esperadas, diferencias relativas, aportes por celda, decisión, conclusión y robustez. | Compilación Python correcta; `127 passed` con Pytest; Streamlit inició localmente. | Propuesto: `feat: agregar inferencia cualitativa`. |
 | P-07 | 2026-06-26 | Codex | Inferencia cuantitativa | Implementar la prueba t bilateral para la pendiente poblacional y los intervalos de confianza en la Página 2. | Se implementaron inferencia de regresión, decisión, conclusión, IC para β₀/β₁ e intervalo de Fisher para ρ. | Compilación Python correcta; `154 passed` con Pytest. | Propuesto: `feat: agregar inferencia cuantitativa`. |
 | P-08 | 2026-06-26 | Codex | Calculadora de predicción | Implementar la calculadora técnica de autonomía con intervalo para media e intervalo individual. | Se implementó predicción con Statsmodels, extrapolación, amplitudes, gráfico técnico y documentación. | Compilación Python correcta; `175 passed` con Pytest. | Propuesto: `feat: agregar calculadora de prediccion`. |
+| P-09 | 2026-06-26 | Codex | Diagnóstico de residuos | Implementar gráficos y métricas de diagnóstico residual para validar técnicamente supuestos del modelo lineal en la Página 2. | Se implementaron residuos, residuos estandarizados, gráfico residuos-ajustados, Q-Q Plot, histograma, textos prudentes y pruebas P-09. | Compilación Python correcta; `203 passed` con Pytest. | Propuesto: `feat: agregar diagnostico de residuos`. |
 
 ## P-00 — Inspección del repositorio
 
@@ -3677,6 +3678,549 @@ No se registraron correcciones humanas durante la implementación de P-08.
 
 ```text
 feat: agregar calculadora de prediccion
+```
+
+## P-09 — Diagnóstico de residuos y validación técnica de supuestos
+
+### Objetivo
+
+Completar la validación técnica del modelo de regresión lineal simple en la
+Página 2 mediante residuos, residuos estandarizados, gráfico de residuos frente
+a valores ajustados, Q-Q Plot e histograma complementario.
+
+### Prompt completo
+
+````text
+Trabaja exclusivamente en la rama `feat/diagnostico-residuos`.
+
+Antes de modificar archivos:
+
+1. Lee `AGENTS.md`.
+2. Confirma que la rama activa sea `feat/diagnostico-residuos`.
+3. Verifica que el árbol de trabajo esté limpio.
+4. Inspecciona:
+
+   * `src/analisis_cuantitativo.py`
+   * `pages/2_Perfil_Analista.py`
+   * los tests existentes;
+   * la documentación.
+5. Confirma que P-06, P-07 y P-08 estén presentes en la Página 2.
+6. Presenta un plan breve.
+7. No realices commit, push, merge ni Pull Request.
+
+# Fase P-09: diagnóstico de residuos y validación técnica de supuestos
+
+## Objetivo
+
+Completar la validación técnica del modelo de regresión lineal mediante:
+
+1. Gráfico de residuos frente a valores ajustados.
+2. Gráfico de probabilidad normal Q-Q de los residuos.
+3. Histograma de residuos como complemento.
+4. Explicación técnica de los supuestos de:
+
+   * linealidad;
+   * homocedasticidad;
+   * normalidad de los errores.
+
+Los gráficos deben actualizarse automáticamente cuando cambie el archivo semanal activo.
+
+No ajustes un modelo diferente. Reutiliza exactamente el mismo modelo empleado en P-05, P-07 y P-08.
+
+# Fuente de datos
+
+Utiliza:
+
+`st.session_state["datos_activos"]`
+
+No leas directamente el Excel.
+
+La variable independiente continúa siendo:
+
+`Antiguedad_Bateria_Meses`
+
+La variable dependiente continúa siendo:
+
+`Autonomia_Real_Km`
+
+# Estructura de diagnóstico
+
+Completa `src/analisis_cuantitativo.py` con una estructura tipada equivalente a:
+
+```python
+@dataclass(frozen=True)
+class ResultadoDiagnosticoResiduos:
+    valores_ajustados: pandas.Series
+    residuos: pandas.Series
+    residuos_estandarizados: pandas.Series
+    media_residuos: float
+    desviacion_residuos: float
+    cantidad_residuos_atipicos_dos: int
+    cantidad_residuos_atipicos_tres: int
+```
+
+Puedes adaptar el diseño si existe una alternativa más limpia, pero debe permitir reutilizar claramente los datos en la interfaz y las pruebas.
+
+Implementa funciones equivalentes a:
+
+```python
+def calcular_diagnostico_residuos(
+    datos: pandas.DataFrame,
+) -> ResultadoDiagnosticoResiduos:
+    ...
+```
+
+```python
+def construir_datos_residuos_ajustados(
+    datos: pandas.DataFrame,
+    diagnostico: ResultadoDiagnosticoResiduos,
+) -> pandas.DataFrame:
+    ...
+```
+
+```python
+def construir_datos_qq(
+    residuos: pandas.Series,
+) -> pandas.DataFrame:
+    ...
+```
+
+```python
+def construir_datos_histograma_residuos(
+    residuos: pandas.Series,
+) -> pandas.DataFrame:
+    ...
+```
+
+# Residuos
+
+Utiliza:
+
+[
+e_i = y_i-\hat y_i
+]
+
+Los residuos y valores ajustados deben provenir del mismo modelo utilizado en las fases anteriores.
+
+Verifica:
+
+* misma cantidad de residuos que observaciones;
+* valores finitos;
+* media de residuos aproximadamente cero debido a la presencia del intercepto;
+* variabilidad residual positiva.
+
+# Residuos estandarizados
+
+Calcula residuos estandarizados mediante Statsmodels, preferentemente usando la influencia del modelo:
+
+```python
+influencia = modelo.get_influence()
+residuos_estandarizados = influencia.resid_studentized_internal
+```
+
+No uses simplemente `residuo / desviación estándar` si Statsmodels ya proporciona el cálculo apropiado.
+
+Utiliza los residuos estandarizados únicamente como ayuda diagnóstica.
+
+Identifica:
+
+* posibles observaciones atípicas cuando (|r_i|>2);
+* observaciones más extremas cuando (|r_i|>3).
+
+No elimines observaciones automáticamente.
+
+No declares que una observación es errónea solamente por superar esos valores.
+
+# Gráfico de residuos frente a valores ajustados
+
+Utiliza Plotly.
+
+Requisitos:
+
+* Eje X: valores ajustados de autonomía.
+* Eje Y: residuos.
+* Línea horizontal en (y=0).
+* Puntos individuales sin líneas que los conecten.
+* Tooltip con:
+
+  * autonomía observada;
+  * autonomía ajustada;
+  * residuo;
+  * residuo estandarizado;
+  * antigüedad;
+  * sucursal;
+  * nivel de fallos.
+* Títulos y ejes en español.
+* Los puntos con (|residuo estandarizado|>2) pueden destacarse visualmente.
+* No elimines ni ocultes esos puntos.
+
+Incluye una guía interpretativa:
+
+### Linealidad
+
+Un patrón curvo o sistemático alrededor de cero puede indicar que la forma lineal no representa adecuadamente la relación.
+
+### Homocedasticidad
+
+Una dispersión aproximadamente constante de residuos a lo largo de los valores ajustados es compatible con varianza constante.
+
+Una forma de embudo puede indicar heterocedasticidad.
+
+No generes automáticamente una conclusión categórica basada solamente en una regla simplista.
+
+# Q-Q Plot
+
+Construye el Q-Q Plot mediante:
+
+```python
+scipy.stats.probplot
+```
+
+o una alternativa estadísticamente equivalente.
+
+Debe contener:
+
+* cuantiles teóricos normales;
+* residuos ordenados;
+* línea de referencia;
+* puntos individuales;
+* ejes y título en español.
+
+La línea debe construirse con la pendiente e intercepto devueltos por `probplot` o mediante un procedimiento equivalente validado.
+
+Interpretación visible:
+
+> Si los puntos se aproximan razonablemente a la línea de referencia, el supuesto de normalidad de los residuos resulta compatible con los datos. Desviaciones sistemáticas, especialmente en los extremos, pueden indicar falta de normalidad.
+
+No afirmar automáticamente normalidad perfecta.
+
+# Histograma de residuos
+
+Incluye un histograma como complemento.
+
+Requisitos:
+
+* residuos en el eje X;
+* frecuencia en el eje Y;
+* cantidad razonable de intervalos;
+* línea vertical en cero;
+* título en español.
+
+El histograma no sustituye al Q-Q Plot.
+
+Puede colocarse dentro de un expander si la página queda demasiado extensa.
+
+# Evaluación técnica visible
+
+Agrega una sección con tres bloques:
+
+## Linealidad
+
+Explicar qué debe observarse en residuos frente a ajustados.
+
+## Homocedasticidad
+
+Explicar qué significa dispersión aproximadamente constante.
+
+## Normalidad
+
+Explicar que el supuesto se refiere a los residuos o errores del modelo, no necesariamente a X o Y.
+
+También mostrar:
+
+* media de residuos;
+* desviación estándar residual;
+* cantidad con (|residuo estandarizado|>2);
+* cantidad con (|residuo estandarizado|>3).
+
+No presentar estos conteos como una prueba definitiva.
+
+# Supuesto de independencia
+
+La independencia de los errores no puede validarse completamente mediante estos gráficos.
+
+Incluye una aclaración:
+
+> La independencia depende del diseño de recolección. Se asume que cada fila representa un monopatín diferente y que las observaciones no dependen entre sí.
+
+No implementar pruebas de series temporales, ya que la matriz representa una muestra semanal transversal y no una serie ordenada en el tiempo.
+
+# Página 2
+
+Conserva íntegramente:
+
+* P-06: inferencia cualitativa;
+* P-07: inferencia para la pendiente e intervalos;
+* P-08: calculadora de predicción.
+
+Agrega debajo:
+
+## Validación técnica de supuestos
+
+Debe contener:
+
+1. Introducción breve.
+2. Gráfico de residuos frente a valores ajustados.
+3. Explicación de linealidad y homocedasticidad.
+4. Q-Q Plot.
+5. Histograma de residuos.
+6. Métricas diagnósticas.
+7. Aclaración sobre independencia.
+8. Advertencia de que los gráficos requieren interpretación conjunta.
+
+No agregues una conclusión automática del tipo:
+
+* “Todos los supuestos se cumplen”.
+* “El modelo es válido”.
+* “El modelo queda invalidado”.
+
+Puede utilizarse un texto prudente como:
+
+> Los gráficos permiten evaluar la compatibilidad de los datos con los supuestos. La decisión debe considerar conjuntamente los patrones observados, el contexto y el tamaño muestral.
+
+# Manejo de errores
+
+Antes del diagnóstico verifica:
+
+* cantidad suficiente de datos;
+* valores finitos;
+* variabilidad en X;
+* variabilidad en Y;
+* residuos con variabilidad.
+
+Muestra mensajes comprensibles y evita trazas técnicas en Streamlit.
+
+# Resultado predeterminado
+
+Para el Excel predeterminado reporta:
+
+* media de residuos;
+* desviación estándar de residuos;
+* mínimo y máximo de residuos;
+* cantidad con (|residuo estandarizado|>2);
+* cantidad con (|residuo estandarizado|>3);
+* parámetros de la línea Q-Q;
+* confirmación de que se generaron 48 puntos en cada diagnóstico correspondiente.
+
+No fijes manualmente resultados esperados que dependan de cálculos reales.
+
+# Pruebas automatizadas
+
+Agrega pruebas para:
+
+1. Cantidad de residuos igual a n.
+2. Cantidad de valores ajustados igual a n.
+3. Cantidad de residuos estandarizados igual a n.
+4. Residuos iguales a observado menos ajustado.
+5. Media de residuos aproximadamente cero.
+6. Valores finitos.
+7. Variabilidad residual positiva.
+8. Construcción de datos para residuos frente a ajustados.
+9. Conservación de columnas de contexto para tooltip.
+10. Línea horizontal de referencia definida en cero.
+11. Q-Q Plot con la misma cantidad de puntos que residuos.
+12. Cuantiles teóricos ordenados.
+13. Residuos ordenados en los datos Q-Q.
+14. Pendiente Q-Q finita.
+15. Intercepto Q-Q finito.
+16. Histograma construido con todos los residuos.
+17. Conteo correcto de residuos estandarizados mayores que 2.
+18. Conteo correcto de residuos estandarizados mayores que 3.
+19. No eliminación automática de observaciones atípicas.
+20. Error con X constante.
+21. Error con Y constante.
+22. Error con residuos sin variabilidad.
+23. Resultado coherente con el Excel predeterminado.
+24. P-06, P-07 y P-08 permanecen presentes.
+25. La Página 2 contiene los títulos de ambos gráficos obligatorios.
+26. La página explica que normalidad se evalúa sobre los residuos.
+27. La página no declara automáticamente que todos los supuestos se cumplen.
+28. No aparece lenguaje causal.
+
+No crees pruebas frágiles sobre la configuración interna de los widgets.
+
+# Documentación
+
+Actualiza:
+
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+Conserva íntegramente P-00 a P-08.
+
+Agrega P-09 con:
+
+* prompt completo;
+* funciones implementadas;
+* definición de residuo;
+* significado de residuos estandarizados;
+* criterios orientativos de (|r|>2) y (|r|>3);
+* interpretación de linealidad;
+* interpretación de homocedasticidad;
+* interpretación del Q-Q Plot;
+* limitación para evaluar independencia;
+* resultados;
+* pruebas;
+* problemas encontrados;
+* commit propuesto.
+
+Documenta que:
+
+* la normalidad requerida corresponde a los errores del modelo;
+* el gráfico de residuos permite evaluar simultáneamente linealidad y homocedasticidad;
+* el Q-Q Plot es la herramienta principal para normalidad;
+* el histograma es complementario;
+* los gráficos no producen automáticamente una decisión definitiva.
+
+# Archivos esperados
+
+Los cambios deben concentrarse en:
+
+* `src/analisis_cuantitativo.py`
+* `pages/2_Perfil_Analista.py`
+* `tests/test_analisis_cuantitativo.py`
+* `README.md`
+* `docs/decisiones_metodologicas.md`
+* `docs/registro_pruebas.md`
+* `docs/prompts.md`
+
+No modifiques simulación, carga ni análisis cualitativo salvo error real.
+
+# Validaciones finales
+
+Ejecuta:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Inicia Streamlit temporalmente:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.runOnSave=false
+```
+
+Detén el proceso después de comprobarlo.
+
+Ejecuta:
+
+```powershell
+git diff --check
+git status --short
+```
+
+Para el Excel predeterminado reporta:
+
+* cantidad de residuos;
+* media;
+* desviación estándar;
+* mínimo;
+* máximo;
+* cantidad de residuos estandarizados con valor absoluto mayor que 2;
+* cantidad mayor que 3;
+* parámetros de referencia del Q-Q Plot;
+* resultado total de pruebas.
+
+# Informe final
+
+Informa:
+
+1. Plan aplicado.
+2. Archivos creados.
+3. Archivos modificados.
+4. Funciones implementadas.
+5. Resultados diagnósticos.
+6. Total de pruebas aprobadas.
+7. Resultado de Streamlit.
+8. Confirmación de que P-06, P-07 y P-08 continúan funcionando.
+9. Confirmación de que no se emite una aprobación automática de supuestos.
+10. Resultado de `git diff --check`.
+11. Estado de Git.
+12. Mensaje de commit propuesto.
+
+No realices commit, push, merge ni Pull Request.
+
+Detente y espera mi revisión.
+````
+
+### Funciones implementadas
+
+- `calcular_diagnostico_residuos`
+- `construir_datos_residuos_ajustados`
+- `construir_datos_qq`
+- `construir_datos_histograma_residuos`
+
+### Definiciones y criterios
+
+- El residuo se define como `e_i = y_i - y_hat_i`.
+- Los residuos estandarizados se calculan con
+  `modelo.get_influence().resid_studentized_internal`.
+- Los umbrales `|r| > 2` y `|r| > 3` se utilizan como ayudas diagnósticas
+  orientativas. No eliminan observaciones ni implican que una fila sea errónea.
+- El gráfico de residuos frente a ajustados permite revisar linealidad y
+  homocedasticidad.
+- El Q-Q Plot es la herramienta principal para revisar compatibilidad visual con
+  normalidad de residuos.
+- El histograma es complementario y no reemplaza al Q-Q Plot.
+- La independencia depende del diseño de recolección y no puede validarse por
+  completo mediante estos gráficos.
+- Los gráficos no generan automáticamente una decisión definitiva sobre validez
+  o invalidez del modelo.
+
+### Resultado
+
+Para el Excel predeterminado:
+
+- cantidad de residuos: 48;
+- media: -0.000000000000023;
+- desviación estándar: 3.523622766997476;
+- mínimo: -6.519009897968544;
+- máximo: 9.230990102031456;
+- cantidad con `|residuo estandarizado| > 2`: 1;
+- cantidad con `|residuo estandarizado| > 3`: 0;
+- puntos del Q-Q Plot: 48;
+- pendiente de referencia Q-Q: 3.593496451157682;
+- intercepto de referencia Q-Q: -0.000000000000023;
+- filas en datos de residuos-ajustados: 48;
+- frecuencia total del histograma: 48.
+
+### Problemas encontrados
+
+- El sandbox de Windows volvió a fallar con
+  `CreateProcessAsUserW failed: 1920`; las inspecciones y validaciones se
+  reintentaron con ejecución escalada.
+- Se mantuvo una advertencia no fatal de PowerShell relacionada con
+  `PSReadLine` cuando se ejecutaron comandos con perfil.
+- Una prueba nueva comparó inicialmente contra
+  `ResultadoInferenciaRegresion.valores_ajustados`, atributo que no existe. Se
+  corrigió para comparar contra `ajustar_regresion_lineal`, que expone los
+  valores ajustados del mismo modelo OLS.
+- La validación de residuos sin variabilidad requirió una tolerancia numérica
+  (`1e-12`) para evitar que un ajuste perfectamente lineal pasara por ruido de
+  punto flotante.
+
+### Correcciones humanas
+
+No se registraron correcciones humanas durante la implementación de P-09.
+
+### Validaciones
+
+- `.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests`
+- `.\.venv\Scripts\python.exe -m pytest -q`
+- Inicio temporal de Streamlit en `http://127.0.0.1:8765`
+- `git diff --check`
+- `git status --short`
+
+### Commit propuesto
+
+```text
+feat: agregar diagnostico de residuos
 ```
 
 ## Plantilla para próximos registros

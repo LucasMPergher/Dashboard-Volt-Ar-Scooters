@@ -163,6 +163,86 @@ Validación de sintaxis ejecutada:
 Sin errores.
 ```
 
+## Fase P-09: diagnóstico de residuos y validación técnica de supuestos
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P09-T01 | Conservar cantidad de valores ajustados, residuos y residuos estandarizados. | Datos controlados. | Un valor por observación. | Coincidencia. | Aprobada | Diagnóstico completo. |
+| P09-T02 | Verificar fórmula de residuo. | Datos controlados. | `observado - ajustado`. | Coincidencia. | Aprobada | Misma escala de autonomía. |
+| P09-T03 | Verificar media de residuos. | Modelo con intercepto. | Media aproximadamente cero. | Coincidencia. | Aprobada | Tolerancia numérica. |
+| P09-T04 | Confirmar residuos estandarizados finitos. | Datos controlados. | Todos finitos. | Cumple. | Aprobada | Calculados con Statsmodels. |
+| P09-T05 | Verificar variabilidad residual positiva. | Datos no perfectos. | Desvío residual mayor que cero. | Cumple. | Aprobada | Evita diagnóstico degenerado. |
+| P09-T06 | Reutilizar el mismo modelo lineal. | Datos controlados. | Ajustados coinciden con regresión previa. | Coincidencia. | Aprobada | No se ajusta otro modelo. |
+| P09-T07 | Construir datos para residuos frente a ajustados. | Datos con contexto. | Misma cantidad de filas. | Coincidencia. | Aprobada | No filtra datos. |
+| P09-T08 | Conservar columnas para tooltip. | Datos con contexto. | Observada, ajustada, residuo, estandarizado, X, sucursal y fallos. | Columnas presentes. | Aprobada | No agrega variables estadísticas. |
+| P09-T09 | Marcar atípicos orientativos. | Diagnóstico controlado. | `|r| > 2` y `|r| > 3` detectados. | Conteos correctos. | Aprobada | No implica eliminación. |
+| P09-T10 | Verificar conteos de atípicos. | Datos controlados. | Conteos iguales al cálculo manual. | Coincidencia. | Aprobada | Umbrales estrictos. |
+| P09-T11 | No eliminar observaciones atípicas. | Diagnóstico controlado. | Se conservan todas las filas. | Cumple. | Aprobada | Solo se marcan puntos. |
+| P09-T12 | Construir Q-Q Plot con todos los residuos. | Residuos del modelo. | Un punto por residuo. | Coincidencia. | Aprobada | Datos para Plotly. |
+| P09-T13 | Ordenar cuantiles teóricos. | Q-Q Plot. | Orden creciente. | Cumple. | Aprobada | Requisito visual. |
+| P09-T14 | Ordenar residuos del Q-Q Plot. | Q-Q Plot. | Orden creciente. | Cumple. | Aprobada | Salida de `probplot`. |
+| P09-T15 | Verificar línea Q-Q finita. | Q-Q Plot. | Pendiente, intercepto y línea finitos. | Cumple. | Aprobada | Parámetros guardados en atributos. |
+| P09-T16 | Construir histograma con todos los residuos. | Residuos del modelo. | Suma de frecuencias igual a n. | Coincidencia. | Aprobada | Histograma complementario. |
+| P09-T17 | Validar intervalos del histograma. | Residuos del modelo. | Límite superior mayor que inferior. | Cumple. | Aprobada | Bins válidos. |
+| P09-T18 | Rechazar residuos no finitos en histograma. | Serie con infinito. | Error comprensible. | Error comprensible. | Aprobada | Sin trazas técnicas. |
+| P09-T19 | Rechazar X constante. | Datos controlados. | Error comprensible. | Error comprensible. | Aprobada | Sin variabilidad en X. |
+| P09-T20 | Rechazar Y constante. | Datos controlados. | Error comprensible. | Error comprensible. | Aprobada | Sin variabilidad en Y. |
+| P09-T21 | Rechazar residuos sin variabilidad. | Datos perfectamente lineales. | Error comprensible. | Error comprensible. | Aprobada | Tolerancia numérica `1e-12`. |
+| P09-T22 | Validar Excel predeterminado. | `data/volt_ar_semana_01.xlsx`. | 48 residuos, media cercana a cero y desvío positivo. | Cumple. | Aprobada | Misma base semanal. |
+| P09-T23 | Mostrar sección de validación técnica. | `pages/2_Perfil_Analista.py`. | Título y función presentes. | Presentes. | Aprobada | Página 2. |
+| P09-T24 | Mostrar gráficos diagnósticos. | `pages/2_Perfil_Analista.py`. | Residuos-ajustados, Q-Q Plot e histograma. | Presentes. | Aprobada | Requisitos P-09. |
+| P09-T25 | Incluir línea horizontal en cero. | `pages/2_Perfil_Analista.py`. | `add_hline(y=0)`. | Presente. | Aprobada | Referencia residual. |
+| P09-T26 | Explicar normalidad sobre residuos. | `pages/2_Perfil_Analista.py`. | Texto referido a errores/residuos. | Presente. | Aprobada | No exige normalidad de X o Y. |
+| P09-T27 | Evitar aprobación automática de supuestos. | `pages/2_Perfil_Analista.py`. | No contiene frases concluyentes prohibidas. | Cumple. | Aprobada | Interpretación prudente. |
+| P09-T28 | Conservar P-06, P-07 y P-08. | `pages/2_Perfil_Analista.py`. | Inferencia cualitativa, inferencia cuantitativa y calculadora presentes. | Presentes. | Aprobada | P-09 se agrega debajo. |
+
+Validación automatizada ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+203 passed
+```
+
+Validación de sintaxis ejecutada:
+
+```text
+.\.venv\Scripts\python.exe -m compileall -q app.py pages src tests
+Sin errores.
+```
+
+### Corrección posterior a la revisión manual
+
+Durante la navegación manual a la sección "Residuos frente a valores ajustados"
+se detectó un `NameError`. La página utilizaba `VARIABLE_SUCURSAL` y
+`VARIABLE_NIVEL_FALLOS` en el tooltip del gráfico de residuos, pero no las
+importaba desde `src.config`.
+
+El inicio del servidor Streamlit no había detectado el problema porque la página
+específica todavía no había sido ejecutada mediante navegación. Se agregaron
+ambos imports canónicos. No se modificaron cálculos, residuos, gráficos ni
+resultados estadísticos.
+
+Se agregó el test `test_pagina_analista_importa_constantes_variables_usadas`,
+basado en AST, para verificar que las constantes `VARIABLE_*` utilizadas por la
+página existan y sean importadas desde `src.config`.
+
+| Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| P09-M01 | Navegar completamente a la Página 2. | Streamlit, `Perfil Analista`. | La página se ejecuta sin errores. | Navegación aprobada. | Aprobada | Validado luego de corregir imports. |
+| P09-M02 | Renderizar residuos frente a valores ajustados. | Datos activos predeterminados. | Gráfico visible sin `NameError`. | Renderizado aprobado. | Aprobada | Usa el mismo modelo P-09. |
+| P09-M03 | Renderizar Q-Q Plot. | Residuos del modelo. | Gráfico visible sin errores. | Renderizado aprobado. | Aprobada | Se conserva la línea de referencia. |
+| P09-M04 | Renderizar histograma. | Residuos del modelo. | Histograma disponible en la sección. | Renderizado aprobado. | Aprobada | Complementario al Q-Q Plot. |
+| P09-M05 | Verificar tooltips con variables de contexto. | Gráfico de residuos. | Tooltips con autonomía observada, ajustada, residuo, residuo estandarizado, antigüedad, sucursal y nivel de fallos. | Variables de contexto presentes. | Aprobada | Requiere imports canónicos. |
+| P09-M06 | Confirmar ausencia del `NameError`. | `Perfil Analista`. | Sin error por constantes no definidas. | Sin `NameError`. | Aprobada | Corrección validada manualmente. |
+| P09-M07 | Ejecutar pruebas automatizadas posteriores. | Pytest completo. | 204 pruebas aprobadas. | `204 passed`. | Aprobada | Incluye test AST preventivo. |
+
+Validación automatizada posterior a la corrección:
+
+```text
+.\.venv\Scripts\python.exe -m pytest -q
+204 passed
+```
+
 ## Fase P-08: calculadora de predicción
 
 | Código de prueba | Objetivo | Datos utilizados | Resultado esperado | Resultado obtenido | Estado | Observaciones |
